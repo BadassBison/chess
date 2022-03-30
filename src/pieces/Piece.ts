@@ -1,46 +1,66 @@
 import { GlowFilter } from '@pixi/filter-glow';
-import { Container } from 'pixi.js';
+import { Container, Point } from 'pixi.js';
+import { BoardShape } from '../board/Board';
 import { Square } from '../board/Square';
-import { makeDraggable } from '../utils/makeDraggable';
 
 export abstract class Piece extends Container {
   color: 'white' | 'black';
   square: Square;
+  hasMoved: boolean;
+  availableMoves: Square[];
 
-  constructor(square: Square, cb: Function) {
+  constructor(square: Square) {
     super();
     this.setNewSquare(square);
-    makeDraggable(this);
-
+    this.hasMoved = false;
     this.interactive = true;
-    this.on('mousedown', () => {
-
-      this.filters = [
-        new GlowFilter({
-          outerStrength: 2.6,
-          distance: 12,
-          color: 0x00ffff,
-        }),
-      ];
-
-      cb(this, 'mousedown');
-    });
-
   }
 
   setNewSquare(square: Square): void {
     this.square = square;
-    square.state = this;
-    square.addChild(this);
-    this.position.set(0, 0);
+    square.setPiece(this);
+    this.position.set(square.x, square.y);
   };
 
   move(square: Square): void {
-    // TODO: Animation to move pieces
+    this.hasMoved = true;
     const oldSquare = this.square;
     oldSquare.state = null;
-    oldSquare.removeChild(this);
 
     this.setNewSquare(square);
   };
+
+  addHighlight(): void {
+    this.filters = [
+      new GlowFilter({
+        outerStrength: 2.6,
+        distance: 12,
+        color: 0x00ffff,
+      }),
+    ];
+  }
+
+  removeHighlight(): void {
+    this.filters = null;
+    this.removeAvailableMoveHighlights();
+  }
+
+  addAvailableMoveHighlights(): void {
+    for (const availableMove of this.availableMoves) {
+      availableMove.addHighlight(this);
+    }
+  }
+
+  removeAvailableMoveHighlights(): void {
+    for (const availableMove of this.availableMoves) {
+      availableMove.removeHighlight();
+      availableMove.removeAllListeners();
+    }
+  }
+
+  abstract checkAvailableMove(square: Square, open: boolean): boolean;
+
+  abstract getAvailableMoves(boardState: BoardShape): void;
+
+
 }

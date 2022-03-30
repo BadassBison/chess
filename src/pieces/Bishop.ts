@@ -1,12 +1,13 @@
 import { Sprite } from 'pixi.js';
+import { BoardShape } from '../board/Board';
 import { Square } from '../board/Square';
-import { Position } from '../utils/position';
+import { ChessPosition } from '../utils/ChessPosition';
 import { Piece } from './Piece';
 
 export class Bishop extends Piece {
 
-  constructor(color: 'white' | 'black', square: Square, cb: Function) {
-    super(square, cb);
+  constructor(color: 'white' | 'black', square: Square) {
+    super(square);
     this.name = `${color}-bishop`;
     this.color = color;
 
@@ -16,9 +17,50 @@ export class Bishop extends Piece {
     this.setNewSquare(square);
   }
 
-  getMoves(): Position[] {
-    // TODO: calculate moves
+  getAvailableMoves(boardState: BoardShape): void {
+    const squares: Square[] = [];
 
-    return []
+    const directions: [number, number][] = [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1]
+    ]
+
+    for (const direction of directions) {
+      let currentX = this.square.chessPosition.x;
+      let currentY = this.square.chessPosition.y;
+
+      let available = true;
+      while (available) {
+        const newX = currentX += direction[0];
+        const newY = currentY += direction[1];
+
+        if (newX <= 0 || newX > 8 || newY <= 0 || newY > 8) {
+          available = false;
+        } else {
+          const squareNotation = ChessPosition.getNotation(newX, newY);
+          const square = boardState.get(squareNotation);
+
+          if (this.checkAvailableMove(square)) {
+            squares.push(square);
+            available = square.state == null; // No longer available if hit opponent
+          } else {
+            available = false;
+          }
+        }
+      }
+    }
+
+    for (const square of squares) {
+      square.on('click', () => square.setSquareCallBack(this));
+      square.addHighlight(this);
+    }
+
+    this.availableMoves = squares;
+  }
+
+  checkAvailableMove(square: Square): boolean {
+    return square.state?.color !== this.color;
   }
 }

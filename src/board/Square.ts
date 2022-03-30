@@ -1,21 +1,23 @@
 import { Container } from '@pixi/display';
 import { Piece } from '../pieces/Piece';
 import { Point, Sprite, Texture } from 'pixi.js';
+import { ChessPosition } from '../utils/ChessPosition';
+import { GlowFilter } from '@pixi/filter-glow';
 
 export class Square extends Container {
-  static columnRef = 'abcdefgh';
   static light = 0xEDC40E;
   static dark = 0x8F7609;
 
-  chessPosition: string;
+  chessPosition: ChessPosition;
   state: Piece | null;
+  hitbox: Sprite;
 
-  constructor(row: number, column: number, startingPoint: Point, squareDimensions: number, cb: Function) {
+  constructor(row: number, column: number, startingPoint: Point, squareDimensions: number) {
     super();
-    const chessPosRow = 8 - row;
-    const chessPosColumn = Square.columnRef[column];
 
-    this.name = `square-${chessPosColumn}-${chessPosRow}`;
+    this.chessPosition = new ChessPosition(column, 8 - row);
+
+    this.name = `square-${this.chessPosition.notation}`;
     this.state = null;
 
     const isLight = (row + column) % 2 != 0;
@@ -29,14 +31,58 @@ export class Square extends Container {
     squareUI.height = squareDimensions;
     squareUI.tint = isLight ? Square.light : Square.dark;
 
-    this.chessPosition = `${chessPosColumn}-${chessPosRow}`;
     this.addChild(squareUI);
 
     this.interactive = true;
-    this.on('mouseup', () => {
-      console.log(this.chessPosition);
-      cb(this);
-    });
+  }
 
+  setPiece(piece: Piece) {
+    if (this.state) {
+      this.parent.removeChild(this.state);
+    }
+
+    this.state = piece;
+  }
+
+  setSquareCallBack(piece: Piece): void {
+    piece.move(this);
+    piece.removeHighlight();
+    piece.removeAvailableMoveHighlights();
+  }
+
+  addHighlight(piece: Piece): void {
+    // Move the square to the top
+    this.parent.setChildIndex(this, this.parent.children.length - 1);
+
+    // if the square has a piece, move the piece to the top
+    if (this.state) {
+      this.parent.setChildIndex(this.state, this.parent.children.length - 1);
+      this.hitbox = new Sprite(Texture.WHITE);
+      this.hitbox.tint = 0xffffff;
+      this.hitbox.alpha = 0.5;
+      this.hitbox.width = this.width;
+      this.hitbox.height = this.height;
+      this.hitbox.position.set(this.x, this.y);
+      this.parent.addChild(this.hitbox);
+
+      this.hitbox.interactive = true;
+      this.hitbox.on('click', () => { this.setSquareCallBack(piece) })
+    }
+
+
+    this.filters = [
+      new GlowFilter({
+        outerStrength: 2.6,
+        distance: 12,
+        color: 0xcc0000,
+      }),
+    ];
+  }
+
+  removeHighlight(): void {
+    this.filters = null;
+    if (this.hitbox) {
+      this.parent.removeChild(this.hitbox);
+    }
   }
 }

@@ -1,5 +1,8 @@
 import { newGameShape } from './newGameShape';
 
-export const shapes = {
+export * from './GameShape';
+
+export const shapeFactory = {
   newGame: () => newGameShape
 }
+

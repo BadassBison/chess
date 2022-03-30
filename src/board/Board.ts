@@ -1,22 +1,15 @@
 import { Container, Point, Text } from 'pixi.js';
-import { Bishop } from '../pieces/Bishop';
-import { King } from '../pieces/King';
-import { Knight } from '../pieces/Knight';
-import { Pawn } from '../pieces/Pawn';
-import { Piece } from '../pieces/Piece';
-import { Queen } from '../pieces/Queen';
-import { Rook } from '../pieces/Rook';
-import { makeDraggable } from '../utils/makeDraggable';
-import { Position } from '../utils/position';
-import { shapes } from './shapes';
-import { GameShape } from './shapes/GameShape';
+import { GlowFilter } from '@pixi/filter-glow';
+import { King, Queen, Rook, Bishop, Knight, Pawn, Piece } from '../pieces';
+import { shapeFactory, GameShape } from './shapes';
 import { Square } from './Square';
+import { ChessPosition } from '../utils/ChessPosition';
 
-type BoardShape = Map<string, Square>
+export type BoardShape = Map<string, Square>
 
 export class Board extends Container {
   static build(gameShapeName: string = 'newGame'): Board {
-    const shape: GameShape = shapes[gameShapeName]();
+    const shape: GameShape = shapeFactory[gameShapeName]();
     return new Board(shape);
   }
 
@@ -24,7 +17,6 @@ export class Board extends Container {
   currentlySelectedPiece: Piece;
   squareDimensions: number;
   startingPoint: Point;
-
 
   constructor(shape: GameShape) {
     console.log('Building Board');
@@ -41,15 +33,8 @@ export class Board extends Container {
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
 
-        const newSquare = new Square(row, column, this.startingPoint, this.squareDimensions, (square: Square) => {
-          if (this.currentlySelectedPiece) {
-            this.currentlySelectedPiece.move(square);
-
-            this.currentlySelectedPiece.filters = null;
-            this.currentlySelectedPiece = null;
-          }
-        });
-        this.state.set(newSquare.chessPosition, newSquare);
+        const newSquare = new Square(row, column, this.startingPoint, this.squareDimensions);
+        this.state.set(newSquare.chessPosition.notation, newSquare);
 
         this.addChild(newSquare);
       }
@@ -67,7 +52,7 @@ export class Board extends Container {
       });
       labelRow.position.set(notationRowPos.x, notationRowPos.y);
 
-      const labelColumn = new Text(Square.columnRef[i], {
+      const labelColumn = new Text(ChessPosition.columnRef[i], {
         fontSize: 24
       });
       labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
@@ -80,19 +65,48 @@ export class Board extends Container {
   }
 
   placePieces(shape: GameShape) {
+
     for (const pieceName in shape) {
       const position = shape[pieceName];
 
       const square: Square = this.state.get(position);
 
-      this.setPiece(pieceName, square, (piece: Piece) => {
-        this.setChildIndex(piece.square, this.children.length - 1);
-        this.currentlySelectedPiece = piece;
+      const piece = this.setPiece(pieceName, square);
+      this.addChild(piece);
+
+      piece.on('click', () => {
+        if (this.currentlySelectedPiece && this.currentlySelectedPiece !== piece) {
+          // Selected a different piece
+
+          this.currentlySelectedPiece.removeHighlight();
+
+          piece.getAvailableMoves(this.state);
+
+          this.setChildIndex(piece, this.children.length - 1);
+          this.currentlySelectedPiece = piece;
+          piece.addHighlight();
+
+        } else if (this.currentlySelectedPiece) {
+          // Unselected piece
+
+          this.currentlySelectedPiece = null;
+          piece.removeHighlight();
+        } else {
+          // Selected piece
+
+          console.log({ piece });
+          piece.getAvailableMoves(this.state);
+
+          this.setChildIndex(piece, this.children.length - 1);
+          this.currentlySelectedPiece = piece;
+          piece.addHighlight();
+        }
+
       });
     }
   }
 
-  setPiece(piece: string, square: Square, cb: Function): Piece {
+  setPiece(piece: string, square: Square): Piece {
     const color = piece.includes('white') ? 'white' : 'black';
 
     switch (piece) {
@@ -111,23 +125,23 @@ export class Board extends Container {
       case 'blackPawn5':
       case 'blackPawn6':
       case 'blackPawn7':
-      case 'blackPawn8': return new Pawn(color, square, cb);
+      case 'blackPawn8': return new Pawn(color, square);
       case 'whiteRook1':
       case 'whiteRook2':
       case 'blackRook1':
-      case 'blackRook2': return new Rook(color, square, cb);
+      case 'blackRook2': return new Rook(color, square);
       case 'whiteBishop1':
       case 'whiteBishop2':
       case 'blackBishop1':
-      case 'blackBishop2': return new Bishop(color, square, cb);
+      case 'blackBishop2': return new Bishop(color, square);
       case 'whiteKnight1':
       case 'whiteKnight2':
       case 'blackKnight1':
-      case 'blackKnight2': return new Knight(color, square, cb);
+      case 'blackKnight2': return new Knight(color, square);
       case 'whiteQueen':
-      case 'blackQueen': return new Queen(color, square, cb);
+      case 'blackQueen': return new Queen(color, square);
       case 'whiteKing':
-      case 'blackKing': return new King(color, square, cb);
+      case 'blackKing': return new King(color, square);
     }
   }
 
