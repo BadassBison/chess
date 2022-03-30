@@ -1,6 +1,4 @@
-import { testObject } from './samples'
-import { Container, InteractionEvent, Point } from 'pixi.js';
-import { makeDraggable } from './utils/makeDraggable';
+import { Container } from 'pixi.js';
 import { Board } from './board/Board';
 
 export class Game extends Container {
@@ -11,7 +9,7 @@ export class Game extends Container {
   init() {
     console.log('initializing the game');
 
-    const board = Board.build();
+    const board = Board.build('frenchDefense');
 
     this.addChild(board);
   }

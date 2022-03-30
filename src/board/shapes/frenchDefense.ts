@@ -1,11 +1,11 @@
 import { GameShape } from './GameShape';
 
-export const newGameShape: GameShape = {
+export const frenchDefense: GameShape = {
   whitePawn1: 'a-2',
   whitePawn2: 'b-2',
   whitePawn3: 'c-2',
   whitePawn4: 'd-2',
-  whitePawn5: 'e-2',
+  whitePawn5: 'e-4',
   whitePawn6: 'f-2',
   whitePawn7: 'g-2',
   whitePawn8: 'h-2',
@@ -15,14 +15,14 @@ export const newGameShape: GameShape = {
   whiteBishop2: 'f-1',
   whiteKnight1: 'b-1',
   whiteKnight2: 'g-1',
-  whiteQueen: 'e-1',
-  whiteKing: 'd-1',
+  whiteQueen: 'd-1',
+  whiteKing: 'e-1',
 
   blackPawn1: 'a-7',
   blackPawn2: 'b-7',
   blackPawn3: 'c-7',
   blackPawn4: 'd-7',
-  blackPawn5: 'e-7',
+  blackPawn5: 'e-6',
   blackPawn6: 'f-7',
   blackPawn7: 'g-7',
   blackPawn8: 'h-7',
@@ -32,6 +32,6 @@ export const newGameShape: GameShape = {
   blackBishop2: 'f-8',
   blackKnight1: 'b-8',
   blackKnight2: 'g-8',
-  blackQueen: 'e-8',
-  blackKing: 'd-8',
+  blackQueen: 'd-8',
+  blackKing: 'e-8',
 }

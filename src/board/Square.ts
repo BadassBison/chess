@@ -20,7 +20,7 @@ export class Square extends Container {
     this.name = `square-${this.chessPosition.notation}`;
     this.state = null;
 
-    const isLight = (row + column) % 2 != 0;
+    const isLight = (row + column) % 2 === 0;
 
     const x = column * squareDimensions + startingPoint.x;
     const y = row * squareDimensions + startingPoint.y;
