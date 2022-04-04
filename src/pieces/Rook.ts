@@ -1,24 +1,18 @@
-import { Sprite } from 'pixi.js';
-import { BoardShape } from '../board/Board';
 import { Square } from '../board/Square';
-import { ChessPosition } from '../utils/ChessPosition';
+import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
+import { BoardShape, IGameOptions } from '../models';
+import { outOfBounds } from '../utils/outOfBounds';
 
 export class Rook extends Piece {
 
-  constructor(color: 'white' | 'black', square: Square) {
-    super(square);
-    this.name = `${color}-rook`;
-    this.color = color;
-
-    const sprite = Sprite.from(`img/${this.name}.svg`);
-    sprite.scale.set(2);
-    this.addChild(sprite);
-    this.setNewSquare(square);
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions) {
+    super(pieceName, color, square, options);
   }
 
-  getAvailableMoves(boardState: BoardShape): void {
-    const squares: Square[] = [];
+  setAvailableMoves(boardState: BoardShape): void {
+    this.availableMoves = [];
+    this.attackableSquares = [];
 
     const directions: [number, number][] = [
       [0, 1],
@@ -31,33 +25,30 @@ export class Rook extends Piece {
       let currentX = this.square.chessPosition.x;
       let currentY = this.square.chessPosition.y;
 
-      let available = true;
-      while (available) {
+      let moving = true;
+      while (moving) {
         const newX = currentX += direction[0];
         const newY = currentY += direction[1];
 
-        if (newX <= 0 || newX > 8 || newY <= 0 || newY > 8) {
-          available = false;
+        if (outOfBounds(newX, newY)) {
+          moving = false;
         } else {
           const squareNotation = ChessPosition.getNotation(newX, newY);
           const square = boardState.get(squareNotation);
 
           if (this.checkAvailableMove(square)) {
-            squares.push(square);
-            available = square.state == null; // No longer available if hit opponent
+            this.availableMoves.push(square);
+            moving = square.state == null; // Only moving if opponent was not attacked
           } else {
-            available = false;
+            moving = false;
           }
         }
       }
     }
 
-    for (const square of squares) {
-      square.on('click', () => square.setSquareCallBack(this));
-      square.addHighlight(this);
-    }
+    this.updateSquareAttackingPieces(this.availableMoves);
 
-    this.availableMoves = squares;
+    this.attackableSquares = this.availableMoves;
   }
 
   checkAvailableMove(square: Square): boolean {

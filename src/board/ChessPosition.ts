@@ -1,7 +1,11 @@
+import { outOfBounds } from '../utils/outOfBounds';
+
 export class ChessPosition {
   static columnRef = 'abcdefgh';
 
   static getNotation(x: number, y: number): string {
+    if (outOfBounds(x, y)) return;
+
     return `${ChessPosition.columnRef[x - 1]}-${y}`;
   }
 
@@ -11,14 +15,14 @@ export class ChessPosition {
   row: number;
   y: number;
 
-
+  // Passed as index values starting at 0. Add 1 to normalize;
   constructor(x: number, y: number) {
-    this.update(x, y);
+    this.update(x + 1, y + 1);
   }
 
   update(x: number, y: number) {
-    this.x = x + 1;
-    this.column = x + 1;
+    this.x = x;
+    this.column = x;
 
     this.y = y;
     this.row = y;

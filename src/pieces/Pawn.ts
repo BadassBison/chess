@@ -1,100 +1,90 @@
-import { Sprite } from 'pixi.js';
-import { BoardShape } from '../board/Board';
 import { Square } from '../board/Square';
-import { ChessPosition } from '../utils/ChessPosition';
+import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
+import { BoardShape, IGameOptions, Player } from '../models';
 
 export class Pawn extends Piece {
 
-  constructor(color: 'white' | 'black', square: Square) {
-    super(square);
-    this.name = `${color}-pawn`;
-    this.color = color;
-
-    const sprite = Sprite.from(`img/${this.name}.svg`);
-    sprite.scale.set(2);
-    this.addChild(sprite);
-    this.setNewSquare(square);
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions) {
+    super(pieceName, color, square, options);
   }
 
-  getAvailableMoves(boardState: BoardShape): void {
-    const squares: Square[] = [];
+  setAvailableMoves(boardState: BoardShape): void {
+    this.availableMoves = [];
+    this.attackableSquares = [];
 
     // Check for opponenct pieces in the diagnols
-    const leftX = this.square.chessPosition.x - 1 > 0;
-    const rightX = this.square.chessPosition.x + 1 <= 8;
+    const leftSquareInBounds = this.square.chessPosition.x - 1 > 0;
+    const rightSquareInBounds = this.square.chessPosition.x + 1 <= 8;
     if (this.color === 'white') {
 
       // Only available if enenmy present
-      if (leftX) { // Out of bounds check
+      if (leftSquareInBounds) { // Out of bounds check
         const topLeftNotation = ChessPosition.getNotation(this.square.chessPosition.x - 1, this.square.chessPosition.y + 1);
         const topLeftSquare = boardState.get(topLeftNotation);
-        if (this.checkAvailableMove(topLeftSquare, false)) { squares.push(topLeftSquare) }
+        this.attackableSquares.push(topLeftSquare);
       }
 
-      if (rightX) { // Out of bounds check
+      if (rightSquareInBounds) { // Out of bounds check
         const topRightNotation = ChessPosition.getNotation(this.square.chessPosition.x + 1, this.square.chessPosition.y + 1);
         const topRightSquare = boardState.get(topRightNotation);
-        if (this.checkAvailableMove(topRightSquare, false)) { squares.push(topRightSquare) }
+        this.attackableSquares.push(topRightSquare);
       }
 
       // Only available if no enemy present
       const topNotation = ChessPosition.getNotation(this.square.chessPosition.x, this.square.chessPosition.y + 1);
       const topSquare = boardState.get(topNotation);
-      if (this.checkAvailableMove(topSquare, true)) {
-        squares.push(topSquare);
+      if (this.checkAvailableMove(topSquare)) {
+        this.availableMoves.push(topSquare);
 
         if (!this.hasMoved) {
           const doubleTopNotation = ChessPosition.getNotation(this.square.chessPosition.x, this.square.chessPosition.y + 2);
           const doubleTopSquare = boardState.get(doubleTopNotation);
-          if (this.checkAvailableMove(doubleTopSquare, true)) { squares.push(doubleTopSquare) }
+          if (this.checkAvailableMove(doubleTopSquare)) { this.availableMoves.push(doubleTopSquare) }
         }
       }
 
     } else {
 
       // Only available if enenmy present
-      if (leftX) { // Out of bounds check
+      if (leftSquareInBounds) {
         const bottomLeftNotation = ChessPosition.getNotation(this.square.chessPosition.x - 1, this.square.chessPosition.y - 1);
         const bottomLeftSquare = boardState.get(bottomLeftNotation);
-        if (this.checkAvailableMove(bottomLeftSquare, false)) { squares.push(bottomLeftSquare) }
+        this.attackableSquares.push(bottomLeftSquare);
       }
 
-      if (rightX) { // Out of bounds check
+      if (rightSquareInBounds) {
         const bottomRightNotation = ChessPosition.getNotation(this.square.chessPosition.x + 1, this.square.chessPosition.y - 1);
         const bottomRightSquare = boardState.get(bottomRightNotation);
-        if (this.checkAvailableMove(bottomRightSquare, false)) { squares.push(bottomRightSquare) }
+        this.attackableSquares.push(bottomRightSquare);
       }
 
       // Only available if no enemy present
       const bottomNotation = ChessPosition.getNotation(this.square.chessPosition.x, this.square.chessPosition.y - 1);
       const bottomSquare = boardState.get(bottomNotation);
-      if (this.checkAvailableMove(bottomSquare, true)) {
-        squares.push(bottomSquare);
+      if (this.checkAvailableMove(bottomSquare)) {
+        this.availableMoves.push(bottomSquare);
 
         if (!this.hasMoved) {
           const doubleBottomNotation = ChessPosition.getNotation(this.square.chessPosition.x, this.square.chessPosition.y - 2);
           const doubleBottomSquare = boardState.get(doubleBottomNotation);
-          if (this.checkAvailableMove(doubleBottomSquare, true)) { squares.push(doubleBottomSquare) }
+          if (this.checkAvailableMove(doubleBottomSquare)) { this.availableMoves.push(doubleBottomSquare) }
         }
       }
 
     }
 
-    for (const square of squares) {
-      square.on('click', () => square.setSquareCallBack(this));
-      square.addHighlight(this);
-    }
+    this.updateSquareAttackingPieces(this.attackableSquares);
 
-    this.availableMoves = squares;
+    for (const attackableSquare of this.attackableSquares) {
+      if (attackableSquare.state && attackableSquare.state.color !== this.color) {
+        this.availableMoves.push(attackableSquare);
+      }
+    }
 
   }
 
-  checkAvailableMove(square: Square, open: boolean): boolean {
-    if (open) {
-      return square.state == null;
-    } else {
-      return square.state != null && square.state.color !== this.color;
-    }
+  checkAvailableMove(square: Square): boolean {
+    return square.state == null;
   }
 }

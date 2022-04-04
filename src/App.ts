@@ -1,4 +1,4 @@
-import { Sprite, Application, IApplicationOptions, Texture } from 'pixi.js'
+import { Application, IApplicationOptions } from 'pixi.js'
 
 // Application.registerPlugin(AppLoaderPlugin);
 
@@ -34,8 +34,6 @@ const appOptions: IApplicationOptions = {
 }
 
 export const createApp = (): Application => {
-  console.log('Initalizing the Application');
-
   const app = new Application(appOptions);
   document.body.appendChild(app.view);
 

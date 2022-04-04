@@ -1,24 +1,18 @@
-import { Sprite } from 'pixi.js';
-import { BoardShape } from '../board/Board';
 import { Square } from '../board/Square';
-import { ChessPosition } from '../utils/ChessPosition';
+import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
+import { BoardShape, IGameOptions, Player } from '../models';
+import { outOfBounds } from '../utils/outOfBounds';
 
 export class Knight extends Piece {
 
-  constructor(color: 'white' | 'black', square: Square) {
-    super(square);
-    this.name = `${color}-knight`;
-    this.color = color;
-
-    const sprite = Sprite.from(`img/${this.name}.svg`);
-    sprite.scale.set(2);
-    this.addChild(sprite);
-    this.setNewSquare(square);
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions) {
+    super(pieceName, color, square, options);
   }
 
-  getAvailableMoves(boardState: BoardShape): void {
-    const squares: Square[] = [];
+  setAvailableMoves(boardState: BoardShape): void {
+    this.availableMoves = [];
+    this.attackableSquares = [];
 
     const moves: [number, number][] = [
       [this.square.chessPosition.x + 2, this.square.chessPosition.y + 1],
@@ -32,19 +26,16 @@ export class Knight extends Piece {
     ]
 
     for (const move of moves) {
-      if (move[0] <= 0 || move[0] > 8 || move[1] <= 0 || move[1] > 8) continue;
+      if (outOfBounds(move[0], move[1])) { continue; }
 
       const squareNotation = ChessPosition.getNotation(...move);
       const square = boardState.get(squareNotation);
-      if (this.checkAvailableMove(square)) { squares.push(square) }
+      if (this.checkAvailableMove(square)) { this.availableMoves.push(square) }
     }
 
-    for (const square of squares) {
-      square.on('click', () => square.setSquareCallBack(this));
-      square.addHighlight(this);
-    }
+    this.updateSquareAttackingPieces(this.availableMoves);
 
-    this.availableMoves = squares;
+    this.attackableSquares = this.availableMoves;
   }
 
   checkAvailableMove(square: Square): boolean {

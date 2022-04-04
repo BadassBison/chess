@@ -1,115 +1,143 @@
 import { Container, Point, Text } from 'pixi.js';
-import { GlowFilter } from '@pixi/filter-glow';
 import { King, Queen, Rook, Bishop, Knight, Pawn, Piece } from '../pieces';
-import { shapeFactory, GameShape } from './shapes';
+import { GameShape } from './shapes';
 import { Square } from './Square';
-import { ChessPosition } from '../utils/ChessPosition';
+import { ChessPosition } from './ChessPosition';
+import { BoardShape, HistoryTracker, HistoryTrackerOptions, IGameOptions, MoveTracker, Player, SquareData } from '../models';
 
-export type BoardShape = Map<string, Square>
+
 
 export class Board extends Container {
-  static build(gameShapeName: string = 'newGame'): Board {
-    const shape: GameShape = shapeFactory[gameShapeName]();
-    return new Board(shape);
+  static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker): Board {
+    return new Board(gameShape, gameOptions, historyTracker);
   }
 
-  state: BoardShape = new Map<string, Square>();
-  currentlySelectedPiece: Piece;
+  state: BoardShape;
+  boardPieces: Piece[];
+  currentlySelectedSquare: Square;
   squareDimensions: number;
   startingPoint: Point;
+  historyTracker: HistoryTracker;
 
-  constructor(shape: GameShape) {
-    console.log('Building Board');
-
+  constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker) {
     super();
 
-    this.calculateDimensions();
-    this.buildSquares();
-    this.buildNotations();
-    this.placePieces(shape);
+    this.state = new Map<string, Square>();
+    this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.state });
+    this.buildSquares(options);
+    this.buildNotations(options.player);
+    this.placePieces(gameShape, options);
+    this.trackInitialShape();
+    this.setAvailableMoves();
   }
 
-  buildSquares() {
+  buildSquares(gameOptions: IGameOptions) {
+    this.calculateDimensions();
+
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
 
-        const newSquare = new Square(row, column, this.startingPoint, this.squareDimensions);
+        const squareData: SquareData = {
+          gameOptions,
+          row,
+          column,
+          startingPoint: this.startingPoint,
+          squareDimensions: this.squareDimensions,
+          squareClickCB: (square: Square) => this.handleSquareClick(square),
+          historyTracker: this.historyTracker,
+          attackingTracker: (attackedPiece: Piece) => this.trackAttack(attackedPiece)
+        }
+
+        const newSquare = new Square(squareData);
         this.state.set(newSquare.chessPosition.notation, newSquare);
 
         this.addChild(newSquare);
+        this.addChild(newSquare.hitbox);
       }
     }
   }
 
-  buildNotations() {
+  buildNotations(player: Player) {
     const notationRowPos = new Point(this.startingPoint.x - (this.squareDimensions / 2), this.startingPoint.y + (this.squareDimensions / 3));
     const notationColumnPos = new Point(this.startingPoint.x + (this.squareDimensions / 2.5), this.startingPoint.y - (this.squareDimensions / 2));
 
-    for (let i = 0; i < 8; i++) {
+    if (player === 'white') {
+      for (let i = 0; i < 8; i++) {
 
-      const labelRow = new Text(`${8 - i}`, {
-        fontSize: 24
-      });
-      labelRow.position.set(notationRowPos.x, notationRowPos.y);
+        const labelRow = new Text(`${8 - i}`, {
+          fontSize: 24
+        });
+        labelRow.position.set(notationRowPos.x, notationRowPos.y);
 
-      const labelColumn = new Text(ChessPosition.columnRef[i], {
-        fontSize: 24
-      });
-      labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
+        const labelColumn = new Text(ChessPosition.columnRef[i], {
+          fontSize: 24
+        });
+        labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
 
-      this.addChild(labelRow, labelColumn);
+        this.addChild(labelRow, labelColumn);
 
-      notationRowPos.y += this.squareDimensions;
-      notationColumnPos.x += this.squareDimensions;
+        notationRowPos.y += this.squareDimensions;
+        notationColumnPos.x += this.squareDimensions;
+      }
+    } else {
+      for (let i = 7; i >= 0; i--) {
+
+        const labelRow = new Text(`${8 - i}`, {
+          fontSize: 24
+        });
+        labelRow.position.set(notationRowPos.x, notationRowPos.y);
+
+        const labelColumn = new Text(ChessPosition.columnRef[i], {
+          fontSize: 24
+        });
+        labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
+
+        this.addChild(labelRow, labelColumn);
+
+        notationRowPos.y += this.squareDimensions;
+        notationColumnPos.x += this.squareDimensions;
+      }
     }
   }
 
-  placePieces(shape: GameShape) {
+  placePieces(shape: GameShape, options: IGameOptions) {
+    this.boardPieces = [];
 
     for (const pieceName in shape) {
       const position = shape[pieceName];
 
       const square: Square = this.state.get(position);
 
-      const piece = this.setPiece(pieceName, square);
+      const piece = this.setPiece(pieceName, square, options);
+      this.boardPieces.push(piece);
       this.addChild(piece);
 
-      piece.on('click', () => {
-        if (this.currentlySelectedPiece && this.currentlySelectedPiece !== piece) {
-          // Selected a different piece
-
-          this.currentlySelectedPiece.removeHighlight();
-
-          piece.getAvailableMoves(this.state);
-
-          this.setChildIndex(piece, this.children.length - 1);
-          this.currentlySelectedPiece = piece;
-          piece.addHighlight();
-
-        } else if (this.currentlySelectedPiece) {
-          // Unselected piece
-
-          this.currentlySelectedPiece = null;
-          piece.removeHighlight();
-        } else {
-          // Selected piece
-
-          console.log({ piece });
-          piece.getAvailableMoves(this.state);
-
-          this.setChildIndex(piece, this.children.length - 1);
-          this.currentlySelectedPiece = piece;
-          piece.addHighlight();
-        }
-
-      });
+      square.orderDisplay();
     }
   }
 
-  setPiece(piece: string, square: Square): Piece {
-    const color = piece.includes('white') ? 'white' : 'black';
+  castle(rook: Piece): void {
 
-    switch (piece) {
+    const row = rook.square.chessPosition.row;
+
+    if (rook.square.chessPosition.column === 1) {
+      const newPositionNotation = ChessPosition.getNotation(4, row);
+      const newRookPosition: Square = this.state.get(newPositionNotation);
+
+      rook.move(newRookPosition);
+
+    } else if (rook.square.chessPosition.column === 8) {
+      const newPositionNotation = ChessPosition.getNotation(6, row);
+      const newRookPosition: Square = this.state.get(newPositionNotation);
+
+      rook.move(newRookPosition);
+    }
+  }
+
+  setPiece(pieceName: string, square: Square, options: IGameOptions): Piece {
+    const color = pieceName.includes('white') ? 'white' : 'black';
+
+    switch (pieceName) {
       case 'whitePawn1':
       case 'whitePawn2':
       case 'whitePawn3':
@@ -125,23 +153,70 @@ export class Board extends Container {
       case 'blackPawn5':
       case 'blackPawn6':
       case 'blackPawn7':
-      case 'blackPawn8': return new Pawn(color, square);
+      case 'blackPawn8': return new Pawn(pieceName, color, square, options);
       case 'whiteRook1':
       case 'whiteRook2':
       case 'blackRook1':
-      case 'blackRook2': return new Rook(color, square);
+      case 'blackRook2': return new Rook(pieceName, color, square, options);
       case 'whiteBishop1':
       case 'whiteBishop2':
       case 'blackBishop1':
-      case 'blackBishop2': return new Bishop(color, square);
+      case 'blackBishop2': return new Bishop(pieceName, color, square, options);
       case 'whiteKnight1':
       case 'whiteKnight2':
       case 'blackKnight1':
-      case 'blackKnight2': return new Knight(color, square);
+      case 'blackKnight2': return new Knight(pieceName, color, square, options);
       case 'whiteQueen':
-      case 'blackQueen': return new Queen(color, square);
+      case 'blackQueen': return new Queen(pieceName, color, square, options);
       case 'whiteKing':
-      case 'blackKing': return new King(color, square);
+      case 'blackKing': return new King(pieceName, color, square, options, (rook: Piece): void => { this.castle(rook) });
+    }
+  }
+
+  handleSquareClick(newSelectedSquare: Square): void {
+    const selectedSquare = this.currentlySelectedSquare !== newSelectedSquare;
+    const deselectedSquare = this.currentlySelectedSquare === newSelectedSquare;
+
+    const piece = this.currentlySelectedSquare?.state;
+
+    const hasPiece = !!piece;
+    const isAvailableMove = hasPiece ? piece.availableMoves.includes(newSelectedSquare) : false;
+    const isMove = selectedSquare && isAvailableMove;
+
+    if (isMove) {
+      this.currentlySelectedSquare.removeAllHighlights();
+
+      const oldPosition = piece.getPosition() as string;
+
+      const attackedPiece = piece.move(newSelectedSquare);
+
+      const move: MoveTracker = {
+        pieceName: piece.name,
+        oldPosition,
+        newPosition: piece.getPosition() as string,
+        ...(attackedPiece ? { attackedPiece: attackedPiece.name } : {})
+      }
+
+      this.historyTracker({ move });
+
+      this.setAvailableMoves();
+
+    } else if (selectedSquare) {
+
+      // Selected a different square
+      if (this.currentlySelectedSquare) {
+        this.currentlySelectedSquare.removeAllHighlights();
+      }
+
+      this.currentlySelectedSquare = newSelectedSquare;
+      this.currentlySelectedSquare.AddAllHighlights();
+
+    } else if (deselectedSquare) {
+      this.currentlySelectedSquare.removeAllHighlights();
+      this.currentlySelectedSquare = null;
+
+    } else {
+      console.error('THIS SHOULD NOT HAPPEN');
     }
   }
 
@@ -159,5 +234,28 @@ export class Board extends Container {
 
   getSquareByPosition(position: string): Square {
     return this.state.get(position);
+  }
+
+  trackInitialShape(): void {
+    this.historyTracker
+  }
+
+  trackAttack(attackedPiece: Piece): Piece {
+    let piece: Piece;
+
+    if (attackedPiece) {
+      this.removeChild(attackedPiece);
+      this.boardPieces = this.boardPieces.filter((p: Piece) => p !== attackedPiece);
+
+      piece = attackedPiece;
+    }
+
+    return piece;
+  }
+
+  setAvailableMoves(): void {
+    for (const piece of this.boardPieces) {
+      piece.setAvailableMoves(this.state);
+    }
   }
 }
