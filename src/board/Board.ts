@@ -60,46 +60,26 @@ export class Board extends Container {
   }
 
   buildNotations() {
-    const notationRowPos = new Point(this.startingPoint.x - (this.squareDimensions / 2), this.startingPoint.y + (this.squareDimensions / 3));
-    const notationColumnPos = new Point(this.startingPoint.x + (this.squareDimensions / 2.5), this.startingPoint.y - (this.squareDimensions / 2));
+    const fontSize = this.squareDimensions / 4;
+    const isWhite = this.gameOptions.player === 'white';
 
-    if (this.gameOptions.player === 'white') {
-      for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++) {
 
-        const labelRow = new Text(`${8 - i}`, {
-          fontSize: 24
-        });
-        labelRow.position.set(notationRowPos.x, notationRowPos.y);
+      const rowContent = isWhite ? `${8 - i}` : `${i + 1}`;
+      const labelRow = new Text(rowContent, { fontSize });
+      const rowX = (this.startingPoint.x - this.squareDimensions / 2);
+      const rowY = (this.startingPoint.y + (this.squareDimensions - labelRow.height) / 2) + (i * this.squareDimensions);
+      labelRow.position.set(rowX, rowY);
 
-        const labelColumn = new Text(ChessPosition.columnRef[i], {
-          fontSize: 24
-        });
-        labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
+      const columnContent = isWhite ? ChessPosition.columnRef[i] : ChessPosition.columnRef[7 - i];
+      const labelColumn = new Text(columnContent, { fontSize });
+      const columnX = (this.startingPoint.x + (this.squareDimensions - labelColumn.width) / 2) + (i * this.squareDimensions);
+      const columnY = (this.startingPoint.y + (this.squareDimensions - labelColumn.height) / 2) - this.squareDimensions;
+      labelColumn.position.set(columnX, columnY);
 
-        this.addChild(labelRow, labelColumn);
-
-        notationRowPos.y += this.squareDimensions;
-        notationColumnPos.x += this.squareDimensions;
-      }
-    } else {
-      for (let i = 7; i >= 0; i--) {
-
-        const labelRow = new Text(`${8 - i}`, {
-          fontSize: 24
-        });
-        labelRow.position.set(notationRowPos.x, notationRowPos.y);
-
-        const labelColumn = new Text(ChessPosition.columnRef[i], {
-          fontSize: 24
-        });
-        labelColumn.position.set(notationColumnPos.x, notationColumnPos.y);
-
-        this.addChild(labelRow, labelColumn);
-
-        notationRowPos.y += this.squareDimensions;
-        notationColumnPos.x += this.squareDimensions;
-      }
+      this.addChild(labelRow, labelColumn);
     }
+
   }
 
   placePieces(shape: GameShape) {
@@ -268,7 +248,15 @@ export class Board extends Container {
     return piece;
   }
 
+  removeSquareAttackingPieces(): void {
+    for (const [notation, square] of this.state) {
+      square.attackingPieces = [];
+    }
+  }
+
   setAvailableMoves(): void {
+    this.removeSquareAttackingPieces();
+
     for (const piece of this.boardPieces) {
       piece.setAvailableMoves(this.state);
     }

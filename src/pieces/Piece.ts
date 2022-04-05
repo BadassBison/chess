@@ -25,7 +25,7 @@ export abstract class Piece extends Container {
     this.availableMoves = [];
     this.attackableSquares = [];
 
-    this.buildSprite();
+    this.buildSprite(square.width);
     this.setNewSquare(square, true);
     this.hasMoved = newGame[this.name] !== this.square.chessPosition.notation;
   }
@@ -40,13 +40,7 @@ export abstract class Piece extends Container {
 
   move(square: Square): Piece {
     this.hasMoved = true;
-    const oldSquare = this.square;
-    oldSquare.state = null;
-
-    // Remove this piece as an attackingPiece on all previous attacking squares
-    for (const oldPosition of this.availableMoves) {
-      oldPosition.attackingPieces = oldPosition.attackingPieces.filter((piece: Piece) => piece !== this);
-    }
+    this.square.state = null;
 
     const attackedPiece = this.setNewSquare(square);
 
@@ -83,9 +77,10 @@ export abstract class Piece extends Container {
     return numIdx > 0 ? `img/${this.name.slice(0, numIdx)}.svg` : `img/${this.name}.svg`;
   }
 
-  buildSprite(): void {
+  buildSprite(dimensions: number): void {
     this.sprite = Sprite.from(this.getImgPath());
-    this.sprite.scale.set(2);
+    this.sprite.width = dimensions;
+    this.sprite.height = dimensions;
     this.addChild(this.sprite);
   }
 

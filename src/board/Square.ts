@@ -66,6 +66,8 @@ export class Square extends Container {
 
     this.sprite = new Sprite(Texture.WHITE);
     this.position.set(x, y);
+    this.width = squareDimensions;
+    this.height = squareDimensions;
     this.sprite.width = squareDimensions;
     this.sprite.height = squareDimensions;
 
@@ -94,7 +96,7 @@ export class Square extends Container {
     this.hitbox.height = this.height;
     this.hitbox.position.set(this.x, this.y);
     this.hitbox.interactive = true;
-    this.hitbox.on('click', () => { squareClickCB(this) });
+    this.hitbox.on('pointerdown', () => { squareClickCB(this) });
   }
 
   orderDisplay(): void {
