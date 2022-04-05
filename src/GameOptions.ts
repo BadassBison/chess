@@ -3,7 +3,7 @@ import { colors } from './utils/colors';
 
 export const GameOptions: IGameOptions = {
   player: 'white',
-  startingShape: 'ruyLopez',
+  startingShape: 'newGame',
   selectedEmptySquareColor: colors.lightBlue,
   moveableSpaceColor: colors.red,
   selectedPieceColor: colors.cyan,
