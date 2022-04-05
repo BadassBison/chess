@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
-    "start": "webpack serve"
+    "start": "webpack serve",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +15,7 @@
     "@types/lodash": "^4.14.170",
     "css-loader": "^5.2.5",
     "file-loader": "^6.2.0",
+    "gh-pages": "^3.2.3",
     "style-loader": "^2.0.0",
     "ts-loader": "^9.2.2",
     "typescript": "^4.2.4",
