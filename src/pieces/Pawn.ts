@@ -5,9 +5,23 @@ import { BoardShape, IGameOptions, Player } from '../models';
 
 export class Pawn extends Piece {
 
-  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions) {
+  promotionCB: (pawn: Piece) => void;
+
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions, promotionCB?: (pawn: Piece) => void) {
     super(pieceName, color, square, options);
+    this.promotionCB = promotionCB;
   }
+
+  move(square: Square): Piece {
+    const attackingPiece = super.move(square);
+
+    if (square.chessPosition.row === 1 || square.chessPosition.row === 8) {
+      this.promotionCB(this);
+    }
+
+    return attackingPiece;
+  }
+
 
   setAvailableMoves(boardState: BoardShape): void {
     this.availableMoves = [];

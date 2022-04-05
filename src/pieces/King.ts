@@ -10,7 +10,7 @@ export class King extends Piece {
   castleMoves: Map<Square, Piece>;
   castleCB: (rook: Piece) => void;
 
-  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions, castleCB?: (rook: Piece) => void) {
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions, castleCB: (rook: Piece) => void) {
     super(pieceName, color, square, options);
     this.castleCB = castleCB;
   }

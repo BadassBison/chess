@@ -17,28 +17,30 @@ export class Board extends Container {
   currentlySelectedSquare: Square;
   squareDimensions: number;
   startingPoint: Point;
+  gameOptions: IGameOptions;
   historyTracker: HistoryTracker;
 
   constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker) {
     super();
 
     this.state = new Map<string, Square>();
+    this.gameOptions = options;
     this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.state });
-    this.buildSquares(options);
-    this.buildNotations(options.player);
-    this.placePieces(gameShape, options);
+    this.buildSquares();
+    this.buildNotations();
+    this.placePieces(gameShape);
     this.trackInitialShape();
     this.setAvailableMoves();
   }
 
-  buildSquares(gameOptions: IGameOptions) {
+  buildSquares() {
     this.calculateDimensions();
 
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
 
         const squareData: SquareData = {
-          gameOptions,
+          gameOptions: this.gameOptions,
           row,
           column,
           startingPoint: this.startingPoint,
@@ -57,11 +59,11 @@ export class Board extends Container {
     }
   }
 
-  buildNotations(player: Player) {
+  buildNotations() {
     const notationRowPos = new Point(this.startingPoint.x - (this.squareDimensions / 2), this.startingPoint.y + (this.squareDimensions / 3));
     const notationColumnPos = new Point(this.startingPoint.x + (this.squareDimensions / 2.5), this.startingPoint.y - (this.squareDimensions / 2));
 
-    if (player === 'white') {
+    if (this.gameOptions.player === 'white') {
       for (let i = 0; i < 8; i++) {
 
         const labelRow = new Text(`${8 - i}`, {
@@ -100,7 +102,7 @@ export class Board extends Container {
     }
   }
 
-  placePieces(shape: GameShape, options: IGameOptions) {
+  placePieces(shape: GameShape) {
     this.boardPieces = [];
 
     for (const pieceName in shape) {
@@ -108,12 +110,25 @@ export class Board extends Container {
 
       const square: Square = this.state.get(position);
 
-      const piece = this.setPiece(pieceName, square, options);
+      const piece = this.setPiece(pieceName, square, this.gameOptions);
       this.boardPieces.push(piece);
       this.addChild(piece);
 
       square.orderDisplay();
     }
+  }
+
+  promotion(pawn: Piece): void {
+    const square = pawn.square;
+    const pawnIdx = this.boardPieces.findIndex((piece: Piece) => piece === pawn);
+    this.removeChild(pawn);
+
+    const color = pawn.name.includes('white') ? 'white' : 'black';
+    const queen = new Queen(`${color}Queen`, pawn.color, square, this.gameOptions);
+    this.boardPieces[pawnIdx] = queen;
+    this.addChild(queen);
+
+    square.orderDisplay();
   }
 
   castle(rook: Piece): void {
@@ -153,7 +168,7 @@ export class Board extends Container {
       case 'blackPawn5':
       case 'blackPawn6':
       case 'blackPawn7':
-      case 'blackPawn8': return new Pawn(pieceName, color, square, options);
+      case 'blackPawn8': return new Pawn(pieceName, color, square, options, (pawn: Piece): void => { this.promotion(pawn) });
       case 'whiteRook1':
       case 'whiteRook2':
       case 'blackRook1':
