@@ -3,6 +3,7 @@ import { Piece } from '../pieces';
 import { GameShape } from './shapes';
 import { Square } from './Square';
 import { BoardShape, HistoryTracker, IGameOptions } from '../models';
+import { GameHistory } from '../history/GameHistory';
 export declare class Board extends Container {
     static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker): Board;
     boardShape: BoardShape;
@@ -16,7 +17,7 @@ export declare class Board extends Container {
     historyTracker: HistoryTracker;
     constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker);
     buildSquares(): void;
-    flipBoard(gameShape: GameShape): void;
+    flipBoard(history: GameHistory): void;
     buildNotations(): void;
     placePieces(shape: GameShape): void;
     promotion(pawn: Piece): void;
