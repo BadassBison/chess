@@ -64,17 +64,14 @@ export class King extends Piece {
   }
 
   checkAvailableMove(square: Square): boolean {
-    if (this.color === 'white') {
-      console.log({ square });
-    }
+    // if (this.color === 'white') {
+    //   console.log({ square });
+    // }
     const noPieceOfTheSameColor = square.piece?.color !== this.color;
-    // const noCheck =
-    square.attackingPieces.forEach((piece: Piece) => {
-      console.log({ piece });
-      // return this.color !== piece.color;
-    });
-    return noPieceOfTheSameColor
-    //  && noCheck;
+    const noCheck = !(square.attackingPieces.find((piece: Piece) => {
+      return this.color !== piece.color;
+    }));
+    return noPieceOfTheSameColor && noCheck;
   }
 
   checkAvailableCastleRight(boardState: BoardShape, x: number, y: number): boolean {

@@ -4,6 +4,7 @@ import { GameShape } from './shapes';
 import { Square } from './Square';
 import { ChessPosition } from './ChessPosition';
 import { BoardShape, HistoryTracker, HistoryTrackerOptions, IGameOptions, MoveTracker, Player, SquareData } from '../models';
+import { onKeyPress } from '../utils/onKeyPress';
 
 
 
@@ -18,6 +19,8 @@ export class Board extends Container {
   squareDimensions: number;
   startingPoint: Point;
   gameOptions: IGameOptions;
+  notationRow: Text[];
+  notationColumn: Text[];
   historyTracker: HistoryTracker;
 
   constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker) {
@@ -31,6 +34,8 @@ export class Board extends Container {
     this.placePieces(gameShape);
     this.trackInitialShape();
     this.setAvailableMoves();
+
+    onKeyPress('f', () => { this.flipBoard(gameShape) });
   }
 
   buildSquares() {
@@ -59,25 +64,45 @@ export class Board extends Container {
     }
   }
 
+  flipBoard(gameShape: GameShape) {
+    console.log('board flipped');
+    const parent = this.parent;
+    parent.removeChild(this);
+    for (const notations of [...this.notationRow, ...this.notationColumn]) {
+      this.removeChild(notations);
+    }
+
+    this.boardShape = new Map<string, Square>();
+    this.gameOptions.player = this.gameOptions.player === 'white' ? 'black' : 'white';
+    this.buildSquares();
+    this.buildNotations();
+    this.placePieces(gameShape);
+
+    parent.addChild(this);
+  }
+
   buildNotations() {
+    this.notationRow = [];
+    this.notationColumn = [];
+
     const fontSize = this.squareDimensions / 4;
     const isWhite = this.gameOptions.player === 'white';
 
     for (let i = 0; i < 8; i++) {
 
       const rowContent = isWhite ? `${8 - i}` : `${i + 1}`;
-      const labelRow = new Text(rowContent, { fontSize });
+      this.notationRow.push(new Text(rowContent, { fontSize }));
       const rowX = (this.startingPoint.x - this.squareDimensions / 2);
-      const rowY = (this.startingPoint.y + (this.squareDimensions - labelRow.height) / 2) + (i * this.squareDimensions);
-      labelRow.position.set(rowX, rowY);
+      const rowY = (this.startingPoint.y + (this.squareDimensions - this.notationRow[i].height) / 2) + (i * this.squareDimensions);
+      this.notationRow[i].position.set(rowX, rowY);
 
       const columnContent = isWhite ? ChessPosition.columnRef[i] : ChessPosition.columnRef[7 - i];
-      const labelColumn = new Text(columnContent, { fontSize });
-      const columnX = (this.startingPoint.x + (this.squareDimensions - labelColumn.width) / 2) + (i * this.squareDimensions);
-      const columnY = (this.startingPoint.y + (this.squareDimensions - labelColumn.height) / 2) - this.squareDimensions;
-      labelColumn.position.set(columnX, columnY);
+      this.notationColumn.push(new Text(columnContent, { fontSize }));
+      const columnX = (this.startingPoint.x + (this.squareDimensions - this.notationColumn[i].width) / 2) + (i * this.squareDimensions);
+      const columnY = (this.startingPoint.y + (this.squareDimensions - this.notationColumn[i].height) / 2) - this.squareDimensions;
+      this.notationColumn[i].position.set(columnX, columnY);
 
-      this.addChild(labelRow, labelColumn);
+      this.addChild(this.notationRow[i], this.notationColumn[i]);
     }
 
   }
