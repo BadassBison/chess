@@ -2,8 +2,8 @@ import { IGameOptions } from './models';
 import { colors } from './constants/colors';
 
 export const DefaultGameOptions: IGameOptions = {
-  player: 'black',
-  startingShape: 'ruyLopez',
+  player: 'white',
+  startingShape: 'newGame',
   selectedEmptySquareColor: colors.lightBlue,
   moveableSpaceColor: colors.red,
   selectedPieceColor: colors.cyan,

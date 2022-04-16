@@ -15,18 +15,18 @@ export class GameHistory extends Container {
   moves: MoveTracker[];
   display: Container;
   fontSize: number;
-  currentMoveRect: Graphics;
+  // currentMoveRect: Graphics;
   boardUpdater: BoardUpdater
 
   constructor(boardUpdater: BoardUpdater) {
     super();
     this.gameShape = [];
     this.moves = [];
-    this.currentMoveRect = new Graphics();
+    // this.currentMoveRect = new Graphics();
     this.fontSize = 12;
     this.updateDisplay();
     this.boardUpdater = boardUpdater;
-    this.addChild(this.currentMoveRect);
+    // this.addChild(this.currentMoveRect);
   }
 
   initialState(gameShape: GameShape): void {
@@ -57,15 +57,15 @@ export class GameHistory extends Container {
       this.display.addChild(this.createRow(content, i));
     }
 
-    this.updateCurrentMoveRect(1174, (this.moves.length - 1) * 20 - 4);
+    // this.updateCurrentMoveRect(1174, (this.moves.length - 1) * 20 - 4);
     this.addChild(this.display);
   }
 
-  updateCurrentMoveRect(x: number, y: number) {
-    this.currentMoveRect.clear();
-    this.currentMoveRect.lineStyle(6, 0xFFBD01, 1);
-    this.currentMoveRect.drawRect(x, y, 300, 22);
-  }
+  // updateCurrentMoveRect(x: number, y: number) {
+  //   this.currentMoveRect.clear();
+  //   this.currentMoveRect.lineStyle(6, 0xFFBD01, 1);
+  //   this.currentMoveRect.drawRect(x, y, 300, 22);
+  // }
 
   createRow(rowContent: string, rowIdx: number): Text {
     const rowPadding = 20;
@@ -80,7 +80,7 @@ export class GameHistory extends Container {
     row.buttonMode = true;
     row.on('pointerdown', () => {
       this.boardUpdater(this.gameShape[rowIdx]);
-      this.updateCurrentMoveRect(1174, rowIdx * 20 - 4);
+      // this.updateCurrentMoveRect(1174, rowIdx * 20 - 4);
     });
 
     return row;

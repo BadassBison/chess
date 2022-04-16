@@ -5,6 +5,7 @@ import { Square } from './Square';
 import { ChessPosition } from './ChessPosition';
 import { BoardShape, HistoryTracker, HistoryTrackerOptions, IGameOptions, MoveTracker, Player, SquareData } from '../models';
 import { onKeyPress } from '../utils/onKeyPress';
+import { GameHistory } from '../history/GameHistory';
 
 
 
@@ -34,8 +35,6 @@ export class Board extends Container {
     this.placePieces(gameShape);
     this.trackInitialShape();
     this.setAvailableMoves();
-
-    onKeyPress('f', () => { this.flipBoard(gameShape) });
   }
 
   buildSquares() {
@@ -64,8 +63,9 @@ export class Board extends Container {
     }
   }
 
-  flipBoard(gameShape: GameShape) {
-    console.log('board flipped');
+  flipBoard(history: GameHistory) {
+    const lastGameState = history.getHistory().gameShape[history.getHistory().gameShape.length - 1];
+
     const parent = this.parent;
     parent.removeChild(this);
     for (const notations of [...this.notationRow, ...this.notationColumn]) {
@@ -76,7 +76,8 @@ export class Board extends Container {
     this.gameOptions.player = this.gameOptions.player === 'white' ? 'black' : 'white';
     this.buildSquares();
     this.buildNotations();
-    this.placePieces(gameShape);
+
+    this.placePieces(lastGameState);
 
     parent.addChild(this);
   }
