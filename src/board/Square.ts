@@ -7,7 +7,7 @@ import { AttackingTracker, HistoryTracker, SquareData } from '../models';
 
 export class Square extends Container {
   chessPosition: ChessPosition;
-  state: Piece | null;
+  piece: Piece | null;
   sprite: Sprite;
   hitbox: Sprite;
   attackingPieces: Piece[];
@@ -44,7 +44,7 @@ export class Square extends Container {
     this.chessPosition = new ChessPosition(chessColumn, chessRow);
 
     this.name = `square-${this.chessPosition.notation}`;
-    this.state = null;
+    this.piece = null;
     this.attackingPieces = [];
     this.selectedEmptySquareHighlight = selectedEmptySquareColor;
     this.moveableSpaceHighlight = moveableSpaceColor;
@@ -80,8 +80,8 @@ export class Square extends Container {
   }
 
   setPiece(piece: Piece, initial: boolean): Piece {
-    const attackedPiece = this.attackingTracker(this.state);
-    this.state = piece;
+    const attackedPiece = this.attackingTracker(this.piece);
+    this.piece = piece;
     if (!initial) {
       this.orderDisplay();
     }
@@ -103,16 +103,16 @@ export class Square extends Container {
     const parent = this.parent;
 
     parent.setChildIndex(this, parent.children.length - 1);
-    if (this.state) {
-      parent.setChildIndex(this.state, parent.children.length - 1);
+    if (this.piece) {
+      parent.setChildIndex(this.piece, parent.children.length - 1);
     }
     parent.setChildIndex(this.hitbox, parent.children.length - 1);
   }
 
   AddAllHighlights(): void {
-    if (this.state) {
-      this.state.showAvailableMoves();
-      this.state.addSelectedHighlight();
+    if (this.piece) {
+      this.piece.showAvailableMoves();
+      this.piece.addSelectedHighlight();
     } else {
       this.addSelectedEmptyHighlight();
     }
@@ -150,10 +150,10 @@ export class Square extends Container {
 
   showAttackingPiecesHighlight(): void {
     for (const piece of this.attackingPieces) {
-      if (this.state && this.state.color !== piece.color) {
+      if (this.piece && this.piece.color !== piece.color) {
         // if this square has a piece, and it does not match the attacker
         piece.addAttackerHighlight();
-      } else if (!this.state) {
+      } else if (!this.piece) {
         piece.addAttackerHighlight();
       }
     }
@@ -175,9 +175,9 @@ export class Square extends Container {
 
     this.removeAttackingPiecesHighlight();
 
-    if (this.state) {
-      this.state.removeHighlight();
-      this.state.removeAvailableMovesHighlights()
+    if (this.piece) {
+      this.piece.removeHighlight();
+      this.piece.removeAvailableMovesHighlights()
     }
   }
 }

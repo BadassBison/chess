@@ -12,7 +12,7 @@ export class Board extends Container {
     return new Board(gameShape, gameOptions, historyTracker);
   }
 
-  state: BoardShape;
+  boardShape: BoardShape;
   boardPieces: Piece[];
   currentlySelectedSquare: Square;
   squareDimensions: number;
@@ -23,9 +23,9 @@ export class Board extends Container {
   constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker) {
     super();
 
-    this.state = new Map<string, Square>();
+    this.boardShape = new Map<string, Square>();
     this.gameOptions = options;
-    this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.state });
+    this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.boardShape });
     this.buildSquares();
     this.buildNotations();
     this.placePieces(gameShape);
@@ -51,7 +51,7 @@ export class Board extends Container {
         }
 
         const newSquare = new Square(squareData);
-        this.state.set(newSquare.chessPosition.notation, newSquare);
+        this.boardShape.set(newSquare.chessPosition.notation, newSquare);
 
         this.addChild(newSquare);
         this.addChild(newSquare.hitbox);
@@ -88,7 +88,7 @@ export class Board extends Container {
     for (const pieceName in shape) {
       const position = shape[pieceName];
 
-      const square: Square = this.state.get(position);
+      const square: Square = this.boardShape.get(position);
 
       const piece = this.setPiece(pieceName, square, this.gameOptions);
       this.boardPieces.push(piece);
@@ -117,13 +117,13 @@ export class Board extends Container {
 
     if (rook.square.chessPosition.column === 1) {
       const newPositionNotation = ChessPosition.getNotation(4, row);
-      const newRookPosition: Square = this.state.get(newPositionNotation);
+      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
 
       rook.move(newRookPosition);
 
     } else if (rook.square.chessPosition.column === 8) {
       const newPositionNotation = ChessPosition.getNotation(6, row);
-      const newRookPosition: Square = this.state.get(newPositionNotation);
+      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
 
       rook.move(newRookPosition);
     }
@@ -172,7 +172,7 @@ export class Board extends Container {
     const selectedSquare = this.currentlySelectedSquare !== newSelectedSquare;
     const deselectedSquare = this.currentlySelectedSquare === newSelectedSquare;
 
-    const piece = this.currentlySelectedSquare?.state;
+    const piece = this.currentlySelectedSquare?.piece;
 
     const hasPiece = !!piece;
     const isAvailableMove = hasPiece ? piece.availableMoves.includes(newSelectedSquare) : false;
@@ -228,7 +228,7 @@ export class Board extends Container {
   }
 
   getSquareByPosition(position: string): Square {
-    return this.state.get(position);
+    return this.boardShape.get(position);
   }
 
   trackInitialShape(): void {
@@ -249,7 +249,7 @@ export class Board extends Container {
   }
 
   removeSquareAttackingPieces(): void {
-    for (const [notation, square] of this.state) {
+    for (const [notation, square] of this.boardShape) {
       square.attackingPieces = [];
     }
   }
@@ -258,7 +258,13 @@ export class Board extends Container {
     this.removeSquareAttackingPieces();
 
     for (const piece of this.boardPieces) {
-      piece.setAvailableMoves(this.state);
+      piece.setAvailableMoves(this.boardShape);
+    }
+  }
+
+  clear(): void {
+    for (const piece of this.boardPieces) {
+      this.removeChild(piece);
     }
   }
 }

@@ -38,7 +38,7 @@ export class Bishop extends Piece {
 
           if (this.checkAvailableMove(square)) {
             this.availableMoves.push(square);
-            moving = square.state == null; // Only moving if opponent was not attacked
+            moving = square.piece == null; // moving = true if opponent piece was not attacked
           } else {
             moving = false;
           }
@@ -52,6 +52,6 @@ export class Bishop extends Piece {
   }
 
   checkAvailableMove(square: Square): boolean {
-    return square.state?.color !== this.color;
+    return square.piece?.color !== this.color;
   }
 }

@@ -1,15 +1,19 @@
 {
   "name": "petes-chess-app",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "1.0.2",
+  "description": "Chess app for learning and training",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "scripts": {
     "build": "webpack",
     "start": "webpack serve",
     "deploy": "gh-pages -d dist"
   },
   "keywords": [],
-  "author": "",
+  "author": "Shawn Scott - Badass Bison",
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.170",
@@ -18,7 +22,7 @@
     "gh-pages": "^3.2.3",
     "style-loader": "^2.0.0",
     "ts-loader": "^9.2.2",
-    "typescript": "^4.2.4",
+    "typescript": "^4.6.3",
     "webpack": "^5.37.1",
     "webpack-cli": "^4.7.0",
     "webpack-dev-server": "^3.11.2"

@@ -40,7 +40,7 @@ export abstract class Piece extends Container {
 
   move(square: Square): Piece {
     this.hasMoved = true;
-    this.square.state = null;
+    this.square.piece = null;
 
     const attackedPiece = this.setNewSquare(square);
 

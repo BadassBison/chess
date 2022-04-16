@@ -39,6 +39,6 @@ export class Knight extends Piece {
   }
 
   checkAvailableMove(square: Square): boolean {
-    return square.state?.color !== this.color;
+    return square.piece?.color !== this.color;
   }
 }

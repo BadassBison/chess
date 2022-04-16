@@ -6,8 +6,8 @@ export const buildGameShape = (boardShape: BoardShape): GameShape => {
   const shape: Partial<GameShape> = {};
 
   boardShape.forEach((square: Square, notation: string) => {
-    if (square.state) {
-      shape[square.state.name] = notation;
+    if (square.piece) {
+      shape[square.piece.name] = notation;
     }
   });
 

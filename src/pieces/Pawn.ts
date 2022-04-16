@@ -91,7 +91,7 @@ export class Pawn extends Piece {
     this.updateSquareAttackingPieces(this.attackableSquares);
 
     for (const attackableSquare of this.attackableSquares) {
-      if (attackableSquare.state && attackableSquare.state.color !== this.color) {
+      if (attackableSquare.piece && attackableSquare.piece.color !== this.color) {
         this.availableMoves.push(attackableSquare);
       }
     }
@@ -99,6 +99,6 @@ export class Pawn extends Piece {
   }
 
   checkAvailableMove(square: Square): boolean {
-    return square.state == null;
+    return square.piece == null;
   }
 }

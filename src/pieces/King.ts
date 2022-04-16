@@ -1,7 +1,7 @@
 import { Square } from '../board/Square';
 import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
-import { BoardShape, IGameOptions, Player } from '../models';
+import { BoardShape, CastleCB, IGameOptions, PieceColor, Player } from '../models';
 import { outOfBounds } from '../utils/outOfBounds';
 import { Rook } from './Rook';
 
@@ -10,20 +10,19 @@ export class King extends Piece {
   castleMoves: Map<Square, Piece>;
   castleCB: (rook: Piece) => void;
 
-  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions, castleCB: (rook: Piece) => void) {
+  constructor(pieceName: string, color: PieceColor, square: Square, options: IGameOptions, castleCB: CastleCB) {
     super(pieceName, color, square, options);
     this.castleCB = castleCB;
   }
 
   move(square: Square): Piece {
-    const attackingPiece = super.move(square);
+    const attackedPiece = super.move(square);
 
     if (this.castleMoves.has(square)) {
-      const rook = this.castleMoves.get(square);
-      this.castleCB(rook);
+      this.triggerCastle(square);
     }
 
-    return attackingPiece;
+    return attackedPiece;
   }
 
   setAvailableMoves(boardState: BoardShape): void {
@@ -42,10 +41,10 @@ export class King extends Piece {
       [1, 1]
     ]
 
-    for (const direction of directions) {
+    for (const [xDirection, yDirection] of directions) {
 
-      const newX = this.square.chessPosition.x + direction[0];
-      const newY = this.square.chessPosition.y + direction[1];
+      const newX = this.square.chessPosition.x + xDirection;
+      const newY = this.square.chessPosition.y + yDirection;
 
       if (outOfBounds(newX, newY)) {
         continue;
@@ -61,34 +60,21 @@ export class King extends Piece {
 
     this.updateSquareAttackingPieces(this.attackableSquares);
     this.availableMoves = this.attackableSquares;
-
-    // TODO: Check if we can castle
-    if (!this.hasMoved) {
-      const x = this.square.chessPosition.x;
-      const y = this.square.chessPosition.y;
-
-      // FIXME:
-      if (this.checkAvailableCastleRight(boardState, x, y)) {
-        const square = boardState.get(ChessPosition.getNotation(x + 2, y));
-        const rook = boardState.get(ChessPosition.getNotation(x + 3, y)).state;
-
-        this.availableMoves.push(square);
-        this.castleMoves.set(square, rook);
-      }
-
-      if (this.checkAvailableCastleLeft(boardState, x, y)) {
-        const square = boardState.get(ChessPosition.getNotation(x - 2, y));
-        const rook = boardState.get(ChessPosition.getNotation(x - 4, y)).state;
-
-        this.castleMoves.set(square, rook);
-        this.availableMoves.push(square);
-      }
-    }
+    this.getCastleMoves(boardState);
   }
 
   checkAvailableMove(square: Square): boolean {
-    // TODO: Can not move onto a square where you will have check
-    return square.state?.color !== this.color;
+    if (this.color === 'white') {
+      console.log({ square });
+    }
+    const noPieceOfTheSameColor = square.piece?.color !== this.color;
+    // const noCheck =
+    square.attackingPieces.forEach((piece: Piece) => {
+      console.log({ piece });
+      // return this.color !== piece.color;
+    });
+    return noPieceOfTheSameColor
+    //  && noCheck;
   }
 
   checkAvailableCastleRight(boardState: BoardShape, x: number, y: number): boolean {
@@ -97,19 +83,19 @@ export class King extends Piece {
       [2, 0]
     ];
 
-    const rightRookHasMoved = boardState.get(ChessPosition.getNotation(x + 3, y))?.state?.hasMoved;
+    const rightRookHasMoved = boardState.get(ChessPosition.getNotation(x + 3, y))?.piece?.hasMoved;
 
     if (!rightRookHasMoved) {
 
       // Check if spaces are free to the rook
       let castleAvailable = true;
-      for (const position of castleRightPositionChecks) {
+      for (const [xDirection, yDirection] of castleRightPositionChecks) {
         if (!castleAvailable) break;
 
-        const newX = this.square.chessPosition.x + position[0];
-        const newY = this.square.chessPosition.y + position[1];
+        const newX = this.square.chessPosition.x + xDirection;
+        const newY = this.square.chessPosition.y + yDirection;
 
-        castleAvailable = boardState.get(ChessPosition.getNotation(newX, newY)).state == null;
+        castleAvailable = boardState.get(ChessPosition.getNotation(newX, newY)).piece == null;
       }
 
       return castleAvailable;
@@ -124,26 +110,50 @@ export class King extends Piece {
       [-3, 0]
     ];
 
-    const leftRookHasMoved = boardState.get(ChessPosition.getNotation(x - 4, y))?.state?.hasMoved;
+    const leftRookHasMoved = boardState.get(ChessPosition.getNotation(x - 4, y))?.piece?.hasMoved;
 
     if (!leftRookHasMoved) {
 
       // Check if spaces are free to the rook
       let castleAvailable = true;
-      for (const position of castleLeftPositionChecks) {
+      for (const [xDirection, yDirection] of castleLeftPositionChecks) {
         if (!castleAvailable) break;
 
-        const newX = this.square.chessPosition.x + position[0];
-        const newY = this.square.chessPosition.y + position[1];
+        const newX = this.square.chessPosition.x + xDirection;
+        const newY = this.square.chessPosition.y + yDirection;
 
-        castleAvailable = boardState.get(ChessPosition.getNotation(newX, newY)).state == null;
+        castleAvailable = boardState.get(ChessPosition.getNotation(newX, newY)).piece == null;
       }
       return castleAvailable;
     }
     return false;
   }
 
-  triggerCastle(): void {
+  getCastleMoves(boardState: BoardShape): void {
+    if (!this.hasMoved) {
+      const x = this.square.chessPosition.x;
+      const y = this.square.chessPosition.y;
 
+      if (this.checkAvailableCastleRight(boardState, x, y)) {
+        const square = boardState.get(ChessPosition.getNotation(x + 2, y));
+        const rook = boardState.get(ChessPosition.getNotation(x + 3, y)).piece;
+
+        this.availableMoves.push(square);
+        this.castleMoves.set(square, rook);
+      }
+
+      if (this.checkAvailableCastleLeft(boardState, x, y)) {
+        const square = boardState.get(ChessPosition.getNotation(x - 2, y));
+        const rook = boardState.get(ChessPosition.getNotation(x - 4, y)).piece;
+
+        this.castleMoves.set(square, rook);
+        this.availableMoves.push(square);
+      }
+    }
+  }
+
+  triggerCastle(square: Square): void {
+    const rook = this.castleMoves.get(square);
+    this.castleCB(rook);
   }
 }

@@ -15,8 +15,8 @@ export class ChessPosition {
   row: number;
   y: number;
 
-  // Passed as index values starting at 0. Add 1 to normalize;
   constructor(x: number, y: number) {
+    // Passed as index values starting at 0. Add 1 to normalize;
     this.update(x + 1, y + 1);
   }
 

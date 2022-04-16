@@ -1,4 +1,7 @@
 import { Application, IApplicationOptions } from 'pixi.js'
+import { Game } from './Game';
+import { DefaultGameOptions } from './DefaultGameOptions';
+import { IGameOptions } from './models';
 
 // Application.registerPlugin(AppLoaderPlugin);
 
@@ -33,10 +36,13 @@ const appOptions: IApplicationOptions = {
   backgroundColor: 0xcccccc
 }
 
-export const createApp = (): Application => {
+export const createApp = (GameOptions: IGameOptions = DefaultGameOptions): void => {
   const app = new Application(appOptions);
   document.body.appendChild(app.view);
 
-  return app;
+  const game = new Game(GameOptions);
+  game.init();
+
+  app.stage.addChild(game);
 }
 
