@@ -110,7 +110,7 @@ export class Game extends Container {
     button.interactive = true;
     button.width = innerWidth / 2;
     button.height = 50;
-    button.position.set(innerWidth / 2, innerHeight / 2);
+    button.position.set(0, innerHeight - 100);
 
     const label = new Text('FLIP', { fontSize: 24 });
     label.anchor.set(0.5);

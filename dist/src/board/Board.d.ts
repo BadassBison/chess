@@ -5,7 +5,7 @@ import { Square } from './Square';
 import { BoardShape, HistoryTracker, IGameOptions } from '../models';
 import { GameHistory } from '../history/GameHistory';
 export declare class Board extends Container {
-    static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker): Board;
+    static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker, boardNumber: number): Board;
     boardShape: BoardShape;
     boardPieces: Piece[];
     currentlySelectedSquare: Square;
@@ -15,7 +15,8 @@ export declare class Board extends Container {
     notationRow: Text[];
     notationColumn: Text[];
     historyTracker: HistoryTracker;
-    constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker);
+    constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker, boardNumber: number);
+    buildBoardLabel(boardNumber: number): void;
     buildSquares(): void;
     flipBoard(history: GameHistory): void;
     buildNotations(): void;
