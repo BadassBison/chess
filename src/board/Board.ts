@@ -4,14 +4,13 @@ import { GameShape } from './shapes';
 import { Square } from './Square';
 import { ChessPosition } from './ChessPosition';
 import { BoardShape, HistoryTracker, HistoryTrackerOptions, IGameOptions, MoveTracker, Player, SquareData } from '../models';
-import { onKeyPress } from '../utils/onKeyPress';
 import { GameHistory } from '../history/GameHistory';
 
 
 
 export class Board extends Container {
-  static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker): Board {
-    return new Board(gameShape, gameOptions, historyTracker);
+  static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker, boardNumber: number): Board {
+    return new Board(gameShape, gameOptions, historyTracker, boardNumber);
   }
 
   boardShape: BoardShape;
@@ -24,21 +23,31 @@ export class Board extends Container {
   notationColumn: Text[];
   historyTracker: HistoryTracker;
 
-  constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker) {
+  constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker, boardNumber: number) {
     super();
 
     this.boardShape = new Map<string, Square>();
     this.gameOptions = options;
     this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.boardShape });
     this.buildSquares();
-    this.buildNotations();
+    // this.buildNotations();
     this.placePieces(gameShape);
     this.trackInitialShape();
     this.setAvailableMoves();
+    this.buildBoardLabel(boardNumber);
+  }
+
+  buildBoardLabel(boardNumber: number) {
+    const label = new Text(`BOARD ${boardNumber}`);
+    label.position.set(0, this.height);
+    this.addChild(label);
   }
 
   buildSquares() {
     this.calculateDimensions();
+
+    const isWhite = this.gameOptions.player === 'white';
+    const fontSize = this.squareDimensions / 4;
 
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
@@ -68,16 +77,14 @@ export class Board extends Container {
 
     const parent = this.parent;
     parent.removeChild(this);
-    for (const notations of [...this.notationRow, ...this.notationColumn]) {
-      this.removeChild(notations);
-    }
 
     this.boardShape = new Map<string, Square>();
     this.gameOptions.player = this.gameOptions.player === 'white' ? 'black' : 'white';
     this.buildSquares();
-    this.buildNotations();
 
     this.placePieces(lastGameState);
+    // this.trackInitialShape();
+    this.setAvailableMoves();
 
     parent.addChild(this);
   }
@@ -244,12 +251,12 @@ export class Board extends Container {
   calculateDimensions() {
     const maxDim = Math.min(innerWidth, innerHeight);
     const isHorizontalScreen = maxDim === innerHeight;
-    this.squareDimensions = maxDim / 10;
+    this.squareDimensions = maxDim / 8;
 
     if (isHorizontalScreen) {
-      this.startingPoint = new Point((innerWidth - maxDim) / 2 + this.squareDimensions, this.squareDimensions);
+      this.startingPoint = new Point((innerWidth - maxDim) / 2, 0);
     } else {
-      this.startingPoint = new Point(this.squareDimensions, (innerHeight - maxDim) / 2 + this.squareDimensions);
+      this.startingPoint = new Point(0, 0);
     }
   }
 

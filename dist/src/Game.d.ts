@@ -12,7 +12,9 @@ export declare class Game extends Container {
     constructor(options: IGameOptions);
     init(): void;
     addBoard(gameShape: GameShape): void;
-    addMoveBoardHandling(gameShape: GameShape): void;
+    addButtonToCreateNewBoards(gameShape: GameShape): void;
+    addButtonToFlipBoard(gameShape: GameShape): void;
+    addMoveBoardHandling(): void;
     trackHistory({ move, boardShape }: HistoryTrackerOptions): void;
     boardUpdater(shape: GameShape): void;
 }

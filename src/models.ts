@@ -1,4 +1,4 @@
-import { Point } from 'pixi.js';
+import { Point, Text } from 'pixi.js';
 import { GameShape } from './board/shapes';
 import { Square } from './board/Square';
 import { Piece } from './pieces';

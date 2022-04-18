@@ -1,15 +1,16 @@
 import { Container } from '@pixi/display';
 import { Piece } from '../pieces/Piece';
-import { Sprite, Texture } from 'pixi.js';
+import { Sprite, Texture, Text } from 'pixi.js';
 import { ChessPosition } from './ChessPosition';
 import { GlowFilter } from '@pixi/filter-glow';
-import { AttackingTracker, HistoryTracker, SquareData } from '../models';
+import { AttackingTracker, HistoryTracker, Player, SquareData } from '../models';
 
 export class Square extends Container {
   chessPosition: ChessPosition;
   piece: Piece | null;
   sprite: Sprite;
   hitbox: Sprite;
+  notation: Text;
   attackingPieces: Piece[];
   baseColor: number;
   selectedEmptySquareHighlight: number;
@@ -39,8 +40,10 @@ export class Square extends Container {
       darkSquareColor,
     } = gameOptions;
 
-    const chessColumn = player === 'white' ? column : 7 - column;
-    const chessRow = player === 'white' ? 7 - row : row;
+    const isWhite = player === 'white';
+
+    const chessColumn = isWhite ? column : 7 - column;
+    const chessRow = isWhite ? 7 - row : row;
     this.chessPosition = new ChessPosition(chessColumn, chessRow);
 
     this.name = `square-${this.chessPosition.notation}`;
@@ -56,7 +59,7 @@ export class Square extends Container {
     let x: number;
     let y: number;
 
-    if (player === 'white') {
+    if (isWhite) {
       x = column * squareDimensions + startingPoint.x;
       y = row * squareDimensions + startingPoint.y;
     } else {
@@ -77,6 +80,7 @@ export class Square extends Container {
 
     this.addChild(this.sprite);
     this.setupHitbox(squareClickCB);
+    this.setupNotation(column, row, player);
   }
 
   setPiece(piece: Piece, initial: boolean): Piece {
@@ -99,12 +103,29 @@ export class Square extends Container {
     this.hitbox.on('pointerdown', () => { squareClickCB(this) });
   }
 
+  setupNotation(column: number, row: number, orientation: Player) {
+    const fontSize = this.width / 12;
+    if (column === 0) {
+      const rowContent = orientation === 'white' ? `${8 - row}` : `${row + 1}`;
+      this.notation = new Text(rowContent, { fontSize });
+    }
+
+    if (row === 0) {
+      const columnContent = orientation === 'white' ? ChessPosition.columnRef[column] : ChessPosition.columnRef[7 - column];
+      this.notation = new Text(columnContent, { fontSize });
+    }
+  }
+
   orderDisplay(): void {
     const parent = this.parent;
 
     parent.setChildIndex(this, parent.children.length - 1);
     if (this.piece) {
       parent.setChildIndex(this.piece, parent.children.length - 1);
+    }
+
+    if (this.notation) {
+
     }
     parent.setChildIndex(this.hitbox, parent.children.length - 1);
   }
