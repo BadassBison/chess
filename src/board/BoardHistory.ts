@@ -1,4 +1,4 @@
-import { Container, Text, Graphics } from 'pixi.js';
+import { Container, Text, Graphics, Sprite, Texture } from 'pixi.js';
 import { GameShape } from './shapes';
 import { BoardUpdater, HistoryData, HistoryTrackerOptions, MoveTracker } from '../models';
 import { buildGameShape } from '../utils/buildGameShape';
@@ -23,9 +23,8 @@ export class BoardHistory extends Container {
     this.parent = parent;
     this.gameShape = previousHistory ? [...previousHistory.gameShape] : [];
     this.moves = previousHistory ? [...previousHistory.moves] : [];
-    this.fontSize = 12;
+    this.fontSize = 16;
 
-    this.scrollbox = new Scrollbox({ boxWidth: 200, boxHeight: 160 });
     this.boardUpdater = boardUpdater;
     if (!previousHistory) { this.initialState(gameShape); }
 
@@ -39,8 +38,15 @@ export class BoardHistory extends Container {
   }
 
   initScrollbox(): void {
+    this.scrollbox = new Scrollbox({
+      boxWidth: 230,
+      boxHeight: 260,
+      clampWheel: false,
+      scrollbarSize: 26
+    });
+
     this.addChild(this.scrollbox);
-    this.scrollbox.position.set(10, this.parent.height);
+    this.scrollbox.position.set(innerWidth / 2 + 20, this.parent.height - 30);
     for (let i = 1; i < this.moves.length; i++) {
       const move = this.moves[i];
       const content = `${i}: ${move.pieceName} => ${move.newPosition}`;
@@ -68,7 +74,7 @@ export class BoardHistory extends Container {
   }
 
   createRow(rowContent: string, rowIdx: number): Text {
-    const rowPadding = 20;
+    const rowPadding = 25;
 
     const row = new Text(rowContent, { fontSize: this.fontSize });
     row.position.set(0, (rowIdx - 1) * rowPadding);
