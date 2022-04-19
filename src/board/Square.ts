@@ -1,21 +1,21 @@
 import { Container } from '@pixi/display';
 import { Piece } from '../pieces/Piece';
-import { Sprite, Texture, Text } from 'pixi.js';
+import { Sprite, Texture, Text, ITextStyle } from 'pixi.js';
 import { ChessPosition } from './ChessPosition';
 import { GlowFilter } from '@pixi/filter-glow';
-import { AttackingTracker, HistoryTracker, Player, SquareData } from '../models';
+import { AttackingTracker, Player, SquareData } from '../models';
 
 export class Square extends Container {
   chessPosition: ChessPosition;
   piece: Piece | null;
   sprite: Sprite;
   hitbox: Sprite;
-  notation: Text;
+  notations: Text[];
   attackingPieces: Piece[];
   baseColor: number;
   selectedEmptySquareHighlight: number;
   moveableSpaceHighlight: number;
-  historyTracker: HistoryTracker;
+  // historyTracker: HistoryTracker;
   attackingTracker: AttackingTracker;
 
   constructor(squareData: SquareData) {
@@ -24,11 +24,11 @@ export class Square extends Container {
     const {
       row,
       column,
-      gameOptions,
+      boardOptions,
       startingPoint,
       squareDimensions,
       squareClickCB,
-      historyTracker,
+      // historyTracker,
       attackingTracker
     } = squareData;
 
@@ -38,7 +38,7 @@ export class Square extends Container {
       moveableSpaceColor,
       lightSquareColor,
       darkSquareColor,
-    } = gameOptions;
+    } = boardOptions;
 
     const isWhite = player === 'white';
 
@@ -47,12 +47,13 @@ export class Square extends Container {
     this.chessPosition = new ChessPosition(chessColumn, chessRow);
 
     this.name = `square-${this.chessPosition.notation}`;
+    this.notations = [];
     this.piece = null;
     this.attackingPieces = [];
     this.selectedEmptySquareHighlight = selectedEmptySquareColor;
     this.moveableSpaceHighlight = moveableSpaceColor;
 
-    this.historyTracker = historyTracker;
+    // this.historyTracker = historyTracker;
     this.attackingTracker = attackingTracker;
 
 
@@ -104,15 +105,19 @@ export class Square extends Container {
   }
 
   setupNotation(column: number, row: number, orientation: Player) {
-    const fontSize = this.width / 12;
+    const fontSize = this.width / 4;
     if (column === 0) {
       const rowContent = orientation === 'white' ? `${8 - row}` : `${row + 1}`;
-      this.notation = new Text(rowContent, { fontSize });
+      this.notations.push(new Text(rowContent, { fontSize }));
+      this.notations[0].anchor.set(0, 1);
+      this.notations[0].position.set(this.x + 1, this.y + this.height);
     }
 
     if (row === 0) {
       const columnContent = orientation === 'white' ? ChessPosition.columnRef[column] : ChessPosition.columnRef[7 - column];
-      this.notation = new Text(columnContent, { fontSize });
+      this.notations.push(new Text(columnContent, { fontSize }));
+      this.notations[this.notations.length - 1].anchor.set(1, 0);
+      this.notations[this.notations.length - 1].position.set(this.x + this.width - 2, this.y - 2);
     }
   }
 
@@ -124,15 +129,18 @@ export class Square extends Container {
       parent.setChildIndex(this.piece, parent.children.length - 1);
     }
 
-    if (this.notation) {
-
+    if (this.notations.length > 0) {
+      for (const notation of this.notations) {
+        parent.setChildIndex(notation, parent.children.length - 1);
+      }
     }
+
     parent.setChildIndex(this.hitbox, parent.children.length - 1);
   }
 
   AddAllHighlights(): void {
     if (this.piece) {
-      this.piece.showAvailableMoves();
+      this.piece.showAvailableMovesHighlights();
       this.piece.addSelectedHighlight();
     } else {
       this.addSelectedEmptyHighlight();

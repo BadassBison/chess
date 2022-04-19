@@ -1,18 +1,18 @@
 import { Square } from '../board/Square';
 import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
-import { BoardShape, IGameOptions, Player } from '../models';
+import { BoardShape, IBoardOptions } from '../models';
 import { outOfBounds } from '../utils/outOfBounds';
 
 export class Queen extends Piece {
 
-  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions) {
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IBoardOptions) {
     super(pieceName, color, square, options);
   }
 
   setAvailableMoves(boardState: BoardShape): void {
     this.availableMoves = [];
-    this.attackableSquares = [];
+    this.attackingMoves = [];
 
     const directions: [number, number][] = [
       [0, 1],
@@ -52,7 +52,7 @@ export class Queen extends Piece {
 
     this.updateSquareAttackingPieces(this.availableMoves);
 
-    this.attackableSquares = this.availableMoves;
+    this.attackingMoves = this.availableMoves;
   }
 
   checkAvailableMove(square: Square): boolean {

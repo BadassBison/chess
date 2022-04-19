@@ -1,45 +1,43 @@
-import { Container, InteractionEvent, Point, Sprite, Texture, Text } from 'pixi.js';
+import { Container, Sprite, Texture, Text } from 'pixi.js';
 import { Board } from './board/Board';
 import { GameShape, shapeFactory } from './board/shapes';
 import { colors } from './constants/colors';
-import { GameHistory } from './history/GameHistory';
-import { GameShapeName, HistoryTrackerOptions, IGameOptions, Player } from './models';
+import { GameShapeName, Player } from './models';
+import { DefaultBoardOptions } from './constants/DefaultBoardOptions';
 export class Game extends Container {
-  history: GameHistory;
+  // history: GameHistory;
   player: Player;
   boards: Board[];
   shownBoardIdx: number;
   startingGameShapeName: GameShapeName;
 
-  options: IGameOptions;
-
-  constructor(options: IGameOptions) {
+  constructor() {
     super();
 
     this.shownBoardIdx = 0;
-    this.history = new GameHistory((gameShape: GameShape) => { this.boardUpdater(gameShape) });
-    this.options = options;
   }
 
-  init() {
-    const gameShape: GameShape = shapeFactory[this.options.startingShape]();
-    this.boards = [Board.build(gameShape, this.options, ({ move, boardShape }: HistoryTrackerOptions) => this.trackHistory({ move, boardShape }), 1)];
 
-    this.history.initialState(gameShape);
-    this.addChild(this.boards[0], this.history);
-    // this.addMoveBoardHandling();
-    // this.addButtonToCreateNewBoards(gameShape);
+  init() {
+    const gameShape: GameShape = shapeFactory[DefaultBoardOptions.startingShape]();
+    this.boards = [new Board(gameShape, DefaultBoardOptions, 1)];
+
+    this.addChild(this.boards[0]);
     this.addButtonToFlipBoard();
     this.addButtonToMoveToNextBoardOrCreateNewBoard();
     this.addButtonToMoveBackABoard();
   }
 
+  /**
+   * Duplicates the last board
+   */
   addBoard() {
-    const newBoard = Board.build(this.history.getHistory().gameShape[this.history.getHistory().gameShape.length - 1], this.options, ({ move, boardShape }: HistoryTrackerOptions) => this.trackHistory({ move, boardShape }), this.boards.length + 1);
+    const lastBoard = this.boards[this.boards.length - 1];
+
+    const newBoard = new Board(lastBoard.getGameShape(), lastBoard.boardOptions, this.boards.length + 1, lastBoard.history.getHistory());
     newBoard.position.set(0, 0);
     this.boards.push(newBoard);
   }
-
 
   addButtonToMoveToNextBoardOrCreateNewBoard() {
     const button = new Sprite(Texture.WHITE);
@@ -56,13 +54,11 @@ export class Game extends Container {
 
     button.interactive = true;
     button.on('pointerdown', () => {
-      console.log({ idx: this.shownBoardIdx });
       this.shownBoardIdx++;
-      console.log({ idx: this.shownBoardIdx });
       if (this.shownBoardIdx === this.boards.length) {
         this.addBoard();
-        console.log({ boards: this.boards });
       }
+
       this.removeChild(this.boards[this.shownBoardIdx - 1]);
       this.addChild(this.boards[this.shownBoardIdx]);
     });
@@ -91,19 +87,6 @@ export class Game extends Container {
     });
   }
 
-  addButtonToCreateNewBoards() {
-    const button = new Sprite(Texture.WHITE);
-    button.tint = colors.lightBlue;
-    button.interactive = true;
-    button.on('pointerdown', () => {
-      this.addBoard();
-    });
-    button.width = 50;
-    button.height = 50;
-    button.position.set(0, innerHeight / 2)
-    this.addChild(button);
-  }
-
   addButtonToFlipBoard() {
     const button = new Sprite(Texture.WHITE);
     button.tint = colors.magenta;
@@ -119,57 +102,15 @@ export class Game extends Container {
     this.addChild(button, label);
 
     button.on('pointerdown', () => {
-      this.boards[this.shownBoardIdx].flipBoard(this.history);
+      this.boards[this.shownBoardIdx].flipBoard();
     });
   }
 
-  addMoveBoardHandling() {
-    const canvas = new Sprite(Texture.EMPTY);
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-    this.addChild(canvas);
+  // TODO: History needs to be per board
+  // trackHistory({ move, boardShape }: HistoryTrackerOptions): void {
+  //   this.history.trackHistory({ move, boardShape });
+  // this.history.updateDisplay();
 
-    this.setChildIndex(this.boards[0], this.children.length - 1);
-    this.setChildIndex(this.history, this.children.length - 1);
-    canvas.interactive = true;
-
-    let isDragging = false;
-    const lastPosition = new Point();
-    const newPosition = new Point();
-
-    canvas.on('pointerdown', (e: InteractionEvent) => {
-      isDragging = true;
-
-      lastPosition.copyFrom(e.data.global);
-    });
-
-    canvas.on('pointerup', (e: InteractionEvent) => {
-      isDragging = false;
-    });
-
-    canvas.on('pointermove', (e: InteractionEvent) => {
-      if (isDragging) {
-
-        newPosition.copyFrom(e.data.global);
-        for (const board of this.boards) {
-          board.x += newPosition.x - lastPosition.x;
-          board.y += newPosition.y - lastPosition.y;
-        }
-        lastPosition.copyFrom(e.data.global);
-      }
-    });
-
-  }
-
-  trackHistory({ move, boardShape }: HistoryTrackerOptions): void {
-    this.history.trackHistory({ move, boardShape });
-    // this.history.updateDisplay();
-
-    // console.log(this.history.getHistory());
-  }
-
-  boardUpdater(shape: GameShape) {
-    this.boards[0].clear();
-    this.boards[0].placePieces(shape);
-  }
+  // console.log(this.history.getHistory());
+  // }
 }

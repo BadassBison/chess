@@ -1,16 +1,15 @@
 import { Square } from '../board/Square';
 import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
-import { BoardShape, CastleCB, IGameOptions, PieceColor, Player } from '../models';
+import { BoardShape, CastleCB, IBoardOptions, PieceColor } from '../models';
 import { outOfBounds } from '../utils/outOfBounds';
-import { Rook } from './Rook';
 
 export class King extends Piece {
 
   castleMoves: Map<Square, Piece>;
   castleCB: (rook: Piece) => void;
 
-  constructor(pieceName: string, color: PieceColor, square: Square, options: IGameOptions, castleCB: CastleCB) {
+  constructor(pieceName: string, color: PieceColor, square: Square, options: IBoardOptions, castleCB: CastleCB) {
     super(pieceName, color, square, options);
     this.castleCB = castleCB;
   }
@@ -27,7 +26,7 @@ export class King extends Piece {
 
   setAvailableMoves(boardState: BoardShape): void {
     this.availableMoves = [];
-    this.attackableSquares = [];
+    this.attackingMoves = [];
     this.castleMoves = new Map<Square, Piece>();
 
     const directions: [number, number][] = [
@@ -53,13 +52,13 @@ export class King extends Piece {
         const square = boardState.get(squareNotation);
 
         if (this.checkAvailableMove(square)) {
-          this.attackableSquares.push(square);
+          this.attackingMoves.push(square);
         }
       }
     }
 
-    this.updateSquareAttackingPieces(this.attackableSquares);
-    this.availableMoves = this.attackableSquares;
+    this.updateSquareAttackingPieces(this.attackingMoves);
+    this.availableMoves = this.attackingMoves;
     this.getCastleMoves(boardState);
   }
 

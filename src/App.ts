@@ -1,7 +1,6 @@
 import { Application, IApplicationOptions } from 'pixi.js'
+import { Viewport } from 'pixi-viewport'
 import { Game } from './Game';
-import { DefaultGameOptions } from './DefaultGameOptions';
-import { IGameOptions } from './models';
 
 // Application.registerPlugin(AppLoaderPlugin);
 
@@ -35,12 +34,29 @@ const appOptions: IApplicationOptions = {
   height: innerHeight,
   backgroundColor: 0xcccccc
 }
-
-export const createApp = (GameOptions: IGameOptions = DefaultGameOptions): void => {
+export const createApp = (): void => {
   const app = new Application(appOptions);
   document.body.appendChild(app.view);
 
-  const game = new Game(GameOptions);
+  const viewport = new Viewport({
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+    interaction: app.renderer.plugins.interaction
+  });
+
+  app.stage.addChild(viewport);
+
+  viewport
+    .drag()
+    .pinch()
+    .wheel({
+      wheelZoom: true,
+      smooth: 25,
+      percent: 1,
+    })
+    .decelerate();
+
+  const game = new Game();
   game.init();
 
   app.stage.addChild(game);

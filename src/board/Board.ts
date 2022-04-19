@@ -3,119 +3,108 @@ import { King, Queen, Rook, Bishop, Knight, Pawn, Piece } from '../pieces';
 import { GameShape } from './shapes';
 import { Square } from './Square';
 import { ChessPosition } from './ChessPosition';
-import { BoardShape, HistoryTracker, HistoryTrackerOptions, IGameOptions, MoveTracker, Player, SquareData } from '../models';
-import { GameHistory } from '../history/GameHistory';
-
-
+import { BoardShape, HistoryData, IBoardOptions, MoveTracker, SquareData } from '../models';
+import { BoardHistory } from './BoardHistory';
+import { buildGameShape } from '../utils/buildGameShape';
+import { calculateDimensions } from '../utils/calculateDimensions';
 
 export class Board extends Container {
-  static build(gameShape: GameShape, gameOptions: IGameOptions, historyTracker: HistoryTracker, boardNumber: number): Board {
-    return new Board(gameShape, gameOptions, historyTracker, boardNumber);
-  }
-
   boardShape: BoardShape;
   boardPieces: Piece[];
+  history: BoardHistory;
   currentlySelectedSquare: Square;
   squareDimensions: number;
   startingPoint: Point;
-  gameOptions: IGameOptions;
-  notationRow: Text[];
-  notationColumn: Text[];
-  historyTracker: HistoryTracker;
+  boardOptions: IBoardOptions;
 
-  constructor(gameShape: GameShape, options: IGameOptions, historyTracker: HistoryTracker, boardNumber: number) {
+  constructor(gameShape: GameShape, options: IBoardOptions, boardNumber: number, history?: HistoryData) {
     super();
 
     this.boardShape = new Map<string, Square>();
-    this.gameOptions = options;
-    this.historyTracker = ({ move }: HistoryTrackerOptions) => historyTracker({ move, boardShape: this.boardShape });
+    this.boardOptions = options;
     this.buildSquares();
-    // this.buildNotations();
     this.placePieces(gameShape);
-    this.trackInitialShape();
-    this.setAvailableMoves();
+    this.setAvailableMovesOnAllPieces();
     this.buildBoardLabel(boardNumber);
+    this.history = new BoardHistory(this, gameShape, (gameShape: GameShape) => { this.updateBoardFromHistory(gameShape) }, history);
   }
 
-  buildBoardLabel(boardNumber: number) {
+  getGameShape(): GameShape {
+    return buildGameShape(this.boardShape);
+  }
+
+  updateBoardFromHistory(gameShape: GameShape) {
+    this.clear();
+    this.placePieces(gameShape);
+    this.setAvailableMovesOnAllPieces();
+  }
+
+  /**
+   * Switches the current board from white to black
+   */
+  flipBoard() {
+    const parent = this.parent;
+    parent.removeChild(this);
+
+    const gameShape = buildGameShape(this.boardShape);
+    this.boardShape = new Map<string, Square>();
+    this.boardOptions.player = this.boardOptions.player === 'white' ? 'black' : 'white';
+    this.buildSquares();
+
+    this.placePieces(gameShape);
+    this.setAvailableMovesOnAllPieces();
+
+    parent.addChild(this);
+  }
+
+  /**
+   * Label that shows which board number this is
+   *
+   * @param boardNumber
+   */
+  private buildBoardLabel(boardNumber: number) {
     const label = new Text(`BOARD ${boardNumber}`);
     label.position.set(0, this.height);
     this.addChild(label);
   }
 
-  buildSquares() {
+  /**
+   * Builder which creates all squares for the board
+   */
+  private buildSquares() {
     this.calculateDimensions();
-
-    const isWhite = this.gameOptions.player === 'white';
-    const fontSize = this.squareDimensions / 4;
 
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
 
         const squareData: SquareData = {
-          gameOptions: this.gameOptions,
+          boardOptions: this.boardOptions,
           row,
           column,
           startingPoint: this.startingPoint,
           squareDimensions: this.squareDimensions,
           squareClickCB: (square: Square) => this.handleSquareClick(square),
-          historyTracker: this.historyTracker,
           attackingTracker: (attackedPiece: Piece) => this.trackAttack(attackedPiece)
         }
 
         const newSquare = new Square(squareData);
         this.boardShape.set(newSquare.chessPosition.notation, newSquare);
 
-        this.addChild(newSquare);
-        this.addChild(newSquare.hitbox);
+        this.addChild(newSquare, newSquare.hitbox);
+        if (newSquare.notations.length > 0) {
+          for (const notation of newSquare.notations) {
+            this.addChild(notation);
+          }
+        }
       }
     }
   }
 
-  flipBoard(history: GameHistory) {
-    const lastGameState = history.getHistory().gameShape[history.getHistory().gameShape.length - 1];
-
-    const parent = this.parent;
-    parent.removeChild(this);
-
-    this.boardShape = new Map<string, Square>();
-    this.gameOptions.player = this.gameOptions.player === 'white' ? 'black' : 'white';
-    this.buildSquares();
-
-    this.placePieces(lastGameState);
-    // this.trackInitialShape();
-    this.setAvailableMoves();
-
-    parent.addChild(this);
-  }
-
-  buildNotations() {
-    this.notationRow = [];
-    this.notationColumn = [];
-
-    const fontSize = this.squareDimensions / 4;
-    const isWhite = this.gameOptions.player === 'white';
-
-    for (let i = 0; i < 8; i++) {
-
-      const rowContent = isWhite ? `${8 - i}` : `${i + 1}`;
-      this.notationRow.push(new Text(rowContent, { fontSize }));
-      const rowX = (this.startingPoint.x - this.squareDimensions / 2);
-      const rowY = (this.startingPoint.y + (this.squareDimensions - this.notationRow[i].height) / 2) + (i * this.squareDimensions);
-      this.notationRow[i].position.set(rowX, rowY);
-
-      const columnContent = isWhite ? ChessPosition.columnRef[i] : ChessPosition.columnRef[7 - i];
-      this.notationColumn.push(new Text(columnContent, { fontSize }));
-      const columnX = (this.startingPoint.x + (this.squareDimensions - this.notationColumn[i].width) / 2) + (i * this.squareDimensions);
-      const columnY = (this.startingPoint.y + (this.squareDimensions - this.notationColumn[i].height) / 2) - this.squareDimensions;
-      this.notationColumn[i].position.set(columnX, columnY);
-
-      this.addChild(this.notationRow[i], this.notationColumn[i]);
-    }
-
-  }
-
-  placePieces(shape: GameShape) {
+  /**
+   * Sets board pieces for the game shape
+   * @param shape
+   */
+  private placePieces(shape: GameShape) {
     this.boardPieces = [];
 
     for (const pieceName in shape) {
@@ -123,7 +112,7 @@ export class Board extends Container {
 
       const square: Square = this.boardShape.get(position);
 
-      const piece = this.setPiece(pieceName, square, this.gameOptions);
+      const piece = this.buildPiece(pieceName, square, this.boardOptions);
       this.boardPieces.push(piece);
       this.addChild(piece);
 
@@ -131,38 +120,14 @@ export class Board extends Container {
     }
   }
 
-  promotion(pawn: Piece): void {
-    const square = pawn.square;
-    const pawnIdx = this.boardPieces.findIndex((piece: Piece) => piece === pawn);
-    this.removeChild(pawn);
-
-    const color = pawn.name.includes('white') ? 'white' : 'black';
-    const queen = new Queen(`${color}Queen`, pawn.color, square, this.gameOptions);
-    this.boardPieces[pawnIdx] = queen;
-    this.addChild(queen);
-
-    square.orderDisplay();
-  }
-
-  castle(rook: Piece): void {
-
-    const row = rook.square.chessPosition.row;
-
-    if (rook.square.chessPosition.column === 1) {
-      const newPositionNotation = ChessPosition.getNotation(4, row);
-      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
-
-      rook.move(newRookPosition);
-
-    } else if (rook.square.chessPosition.column === 8) {
-      const newPositionNotation = ChessPosition.getNotation(6, row);
-      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
-
-      rook.move(newRookPosition);
-    }
-  }
-
-  setPiece(pieceName: string, square: Square, options: IGameOptions): Piece {
+  /**
+   *
+   * @param pieceName
+   * @param square
+   * @param options
+   * @returns Piece
+   */
+  private buildPiece(pieceName: string, square: Square, options: IBoardOptions): Piece {
     const color = pieceName.includes('white') ? 'white' : 'black';
 
     switch (pieceName) {
@@ -201,7 +166,59 @@ export class Board extends Container {
     }
   }
 
-  handleSquareClick(newSelectedSquare: Square): void {
+  /**
+   * When a pawn reaches the back row
+   * @param pawn
+   */
+  private promotion(pawn: Piece): void {
+    const square = pawn.square;
+    const pawnIdx = this.boardPieces.findIndex((piece: Piece) => piece === pawn);
+    const color = pawn.name.includes('white') ? 'white' : 'black';
+
+    // FIXME: Do we need to do the logic above if the piece has the color?
+    const queen = new Queen(`${color}Queen`, pawn.color, square, this.boardOptions);
+    this.boardPieces[pawnIdx] = queen;
+
+    this.removeChild(pawn);
+    pawn.destroy();
+    this.addChild(queen);
+
+    square.orderDisplay();
+  }
+
+  /**
+   * When a king castles
+   * @param rook
+   */
+  private castle(rook: Piece): void {
+
+    const row = rook.square.chessPosition.row;
+
+    if (rook.square.chessPosition.column === 1) {
+      const newPositionNotation = ChessPosition.getNotation(4, row);
+      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
+
+      rook.move(newRookPosition);
+
+    } else if (rook.square.chessPosition.column === 8) {
+      const newPositionNotation = ChessPosition.getNotation(6, row);
+      const newRookPosition: Square = this.boardShape.get(newPositionNotation);
+
+      rook.move(newRookPosition);
+    }
+  }
+
+  /**
+   * Square click handling
+   *
+   * this should detect
+   *  - new square clicked (moving)
+   *  - new square clicked (selecting)
+   *  - same square clicked (deselecting)
+   *
+   * @param newSelectedSquare
+   */
+  private handleSquareClick(newSelectedSquare: Square): void {
     const selectedSquare = this.currentlySelectedSquare !== newSelectedSquare;
     const deselectedSquare = this.currentlySelectedSquare === newSelectedSquare;
 
@@ -225,9 +242,9 @@ export class Board extends Container {
         ...(attackedPiece ? { attackedPiece: attackedPiece.name } : {})
       }
 
-      this.historyTracker({ move });
+      this.history.trackHistory({ move, boardShape: this.boardShape });
 
-      this.setAvailableMoves();
+      this.setAvailableMovesOnAllPieces();
 
     } else if (selectedSquare) {
 
@@ -248,51 +265,43 @@ export class Board extends Container {
     }
   }
 
-  calculateDimensions() {
-    const maxDim = Math.min(innerWidth, innerHeight);
-    const isHorizontalScreen = maxDim === innerHeight;
-    this.squareDimensions = maxDim / 8;
-
-    if (isHorizontalScreen) {
-      this.startingPoint = new Point((innerWidth - maxDim) / 2, 0);
-    } else {
-      this.startingPoint = new Point(0, 0);
-    }
-  }
-
-  getSquareByPosition(position: string): Square {
-    return this.boardShape.get(position);
-  }
-
-  trackInitialShape(): void {
-    this.historyTracker
-  }
-
-  trackAttack(attackedPiece: Piece): Piece {
+  private trackAttack(attackedPiece: Piece): Piece {
     let piece: Piece;
 
     if (attackedPiece) {
-      this.removeChild(attackedPiece);
       this.boardPieces = this.boardPieces.filter((p: Piece) => p !== attackedPiece);
-
       piece = attackedPiece;
+
+      this.removeChild(attackedPiece);
+      attackedPiece.destroy();
     }
 
     return piece;
   }
 
-  removeSquareAttackingPieces(): void {
+  // TODO: We need to split out attacking and available
+  setAvailableMovesOnAllPieces(): void {
+    this.removeAttackingPiecesOnAllSquares();
+
+    for (const piece of this.boardPieces) {
+      piece.setAvailableMoves(this.boardShape);
+    }
+  }
+
+  setAttackingPiecesOnSquare() {
+    // TODO: This needs to run before the available moves
+  }
+
+  private removeAttackingPiecesOnAllSquares(): void {
     for (const [notation, square] of this.boardShape) {
       square.attackingPieces = [];
     }
   }
 
-  setAvailableMoves(): void {
-    this.removeSquareAttackingPieces();
-
-    for (const piece of this.boardPieces) {
-      piece.setAvailableMoves(this.boardShape);
-    }
+  private calculateDimensions() {
+    const { squareDimensions, startingPoint } = calculateDimensions();
+    this.squareDimensions = squareDimensions;
+    this.startingPoint = startingPoint;
   }
 
   clear(): void {

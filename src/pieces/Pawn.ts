@@ -1,13 +1,13 @@
 import { Square } from '../board/Square';
 import { ChessPosition } from '../board/ChessPosition';
 import { Piece } from './Piece';
-import { BoardShape, IGameOptions, Player } from '../models';
+import { BoardShape, IBoardOptions } from '../models';
 
 export class Pawn extends Piece {
 
   promotionCB: (pawn: Piece) => void;
 
-  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IGameOptions, promotionCB?: (pawn: Piece) => void) {
+  constructor(pieceName: string, color: 'white' | 'black', square: Square, options: IBoardOptions, promotionCB?: (pawn: Piece) => void) {
     super(pieceName, color, square, options);
     this.promotionCB = promotionCB;
   }
@@ -25,7 +25,7 @@ export class Pawn extends Piece {
 
   setAvailableMoves(boardState: BoardShape): void {
     this.availableMoves = [];
-    this.attackableSquares = [];
+    this.attackingMoves = [];
 
     // Check for opponenct pieces in the diagnols
     const leftSquareInBounds = this.square.chessPosition.x - 1 > 0;
@@ -36,13 +36,13 @@ export class Pawn extends Piece {
       if (leftSquareInBounds) { // Out of bounds check
         const topLeftNotation = ChessPosition.getNotation(this.square.chessPosition.x - 1, this.square.chessPosition.y + 1);
         const topLeftSquare = boardState.get(topLeftNotation);
-        this.attackableSquares.push(topLeftSquare);
+        this.attackingMoves.push(topLeftSquare);
       }
 
       if (rightSquareInBounds) { // Out of bounds check
         const topRightNotation = ChessPosition.getNotation(this.square.chessPosition.x + 1, this.square.chessPosition.y + 1);
         const topRightSquare = boardState.get(topRightNotation);
-        this.attackableSquares.push(topRightSquare);
+        this.attackingMoves.push(topRightSquare);
       }
 
       // Only available if no enemy present
@@ -64,13 +64,13 @@ export class Pawn extends Piece {
       if (leftSquareInBounds) {
         const bottomLeftNotation = ChessPosition.getNotation(this.square.chessPosition.x - 1, this.square.chessPosition.y - 1);
         const bottomLeftSquare = boardState.get(bottomLeftNotation);
-        this.attackableSquares.push(bottomLeftSquare);
+        this.attackingMoves.push(bottomLeftSquare);
       }
 
       if (rightSquareInBounds) {
         const bottomRightNotation = ChessPosition.getNotation(this.square.chessPosition.x + 1, this.square.chessPosition.y - 1);
         const bottomRightSquare = boardState.get(bottomRightNotation);
-        this.attackableSquares.push(bottomRightSquare);
+        this.attackingMoves.push(bottomRightSquare);
       }
 
       // Only available if no enemy present
@@ -88,9 +88,9 @@ export class Pawn extends Piece {
 
     }
 
-    this.updateSquareAttackingPieces(this.attackableSquares);
+    this.updateSquareAttackingPieces(this.attackingMoves);
 
-    for (const attackableSquare of this.attackableSquares) {
+    for (const attackableSquare of this.attackingMoves) {
       if (attackableSquare.piece && attackableSquare.piece.color !== this.color) {
         this.availableMoves.push(attackableSquare);
       }
