@@ -1,2 +1,1 @@
-import { IGameOptions } from './models';
-export declare const createApp: (GameOptions?: IGameOptions) => void;
+export declare const createApp: () => void;

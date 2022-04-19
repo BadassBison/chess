@@ -25,16 +25,15 @@ export interface HistoryData {
     moves: MoveTracker[];
 }
 export interface SquareData {
-    gameOptions: IGameOptions;
+    boardOptions: IBoardOptions;
     row: number;
     column: number;
     startingPoint: Point;
     squareDimensions: number;
     squareClickCB: (square: Square) => void;
-    historyTracker: HistoryTracker;
     attackingTracker: AttackingTracker;
 }
-export interface IGameOptions {
+export interface IBoardOptions {
     player?: Player;
     startingShape?: GameShapeName;
     selectedEmptySquareColor?: number;
@@ -43,4 +42,9 @@ export interface IGameOptions {
     darkSquareColor?: number;
     selectedPieceColor?: number;
     attackerPieceColor?: number;
+}
+export interface GameDimensions {
+    squareDimensions: number;
+    startingPoint: Point;
+    isHorizontalScreen: boolean;
 }

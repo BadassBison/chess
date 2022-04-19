@@ -1,10 +1,10 @@
 import { Square } from '../board/Square';
 import { Piece } from './Piece';
-import { BoardShape, CastleCB, IGameOptions, PieceColor } from '../models';
+import { BoardShape, CastleCB, IBoardOptions, PieceColor } from '../models';
 export declare class King extends Piece {
     castleMoves: Map<Square, Piece>;
     castleCB: (rook: Piece) => void;
-    constructor(pieceName: string, color: PieceColor, square: Square, options: IGameOptions, castleCB: CastleCB);
+    constructor(pieceName: string, color: PieceColor, square: Square, options: IBoardOptions, castleCB: CastleCB);
     move(square: Square): Piece;
     setAvailableMoves(boardState: BoardShape): void;
     checkAvailableMove(square: Square): boolean;
