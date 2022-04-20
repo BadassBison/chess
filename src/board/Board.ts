@@ -12,6 +12,7 @@ export class Board extends Container {
   boardShape: BoardShape;
   boardPieces: Piece[];
   history: BoardHistory;
+  label: Text;
   currentlySelectedSquare: Square;
   squareDimensions: number;
   startingPoint: Point;
@@ -63,9 +64,9 @@ export class Board extends Container {
    * @param boardNumber
    */
   private buildBoardLabel(boardNumber: number) {
-    const label = new Text(`BOARD ${boardNumber}`);
-    label.position.set(0, this.height);
-    this.addChild(label);
+    this.label = new Text(`BOARD ${boardNumber}`);
+    this.label.position.set(0, this.height);
+    this.addChild(this.label);
   }
 
   /**
@@ -160,7 +161,11 @@ export class Board extends Container {
       case 'blackKnight1':
       case 'blackKnight2': return new Knight(pieceName, color, square, options);
       case 'whiteQueen':
-      case 'blackQueen': return new Queen(pieceName, color, square, options);
+      case 'whiteQueen2':
+      case 'whiteQueen3':
+      case 'blackQueen':
+      case 'blackQueen2':
+      case 'blackQueen3': return new Queen(pieceName.substring(0, 10), color, square, options);
       case 'whiteKing':
       case 'blackKing': return new King(pieceName, color, square, options, (rook: Piece): void => { this.castle(rook) });
     }
@@ -173,10 +178,8 @@ export class Board extends Container {
   private promotion(pawn: Piece): void {
     const square = pawn.square;
     const pawnIdx = this.boardPieces.findIndex((piece: Piece) => piece === pawn);
-    const color = pawn.name.includes('white') ? 'white' : 'black';
 
-    // FIXME: Do we need to do the logic above if the piece has the color?
-    const queen = new Queen(`${color}Queen`, pawn.color, square, this.boardOptions);
+    const queen = new Queen(`${pawn.color}Queen`, pawn.color, square, this.boardOptions);
     this.boardPieces[pawnIdx] = queen;
 
     this.removeChild(pawn);
@@ -229,6 +232,8 @@ export class Board extends Container {
     const isMove = selectedSquare && isAvailableMove;
 
     if (isMove) {
+      this.history.clean();
+
       this.currentlySelectedSquare.removeAllHighlights();
 
       const oldPosition = piece.getPosition() as string;
@@ -306,6 +311,8 @@ export class Board extends Container {
 
   clear(): void {
     for (const piece of this.boardPieces) {
+      const square = piece.square;
+      square.piece = null;
       this.removeChild(piece);
     }
   }

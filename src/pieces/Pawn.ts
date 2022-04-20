@@ -13,13 +13,13 @@ export class Pawn extends Piece {
   }
 
   move(square: Square): Piece {
-    const attackingPiece = super.move(square);
+    const attackedPiece = super.move(square);
 
     if (square.chessPosition.row === 1 || square.chessPosition.row === 8) {
       this.promotionCB(this);
     }
 
-    return attackingPiece;
+    return attackedPiece;
   }
 
 
