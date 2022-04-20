@@ -1,4 +1,4 @@
-import { Container, Point } from 'pixi.js';
+import { Container, Point, Text } from 'pixi.js';
 import { Piece } from '../pieces';
 import { GameShape } from './shapes';
 import { Square } from './Square';
@@ -8,6 +8,7 @@ export declare class Board extends Container {
     boardShape: BoardShape;
     boardPieces: Piece[];
     history: BoardHistory;
+    label: Text;
     currentlySelectedSquare: Square;
     squareDimensions: number;
     startingPoint: Point;
